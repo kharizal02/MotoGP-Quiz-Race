@@ -1,30 +1,25 @@
 const express = require('express');
 const socketIo = require('socket.io');
 const cors = require('cors');
-const path = require('path');
 
 const app = express();
 app.use(cors());
 app.use(express.static('public'));
 
-// Add this fallback route for root path
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'Index.html'));
+const PORT = 3000;
+const server = app.listen(PORT, () => {
+  console.log(`Server running at http://localhost:${PORT}`);
 });
 
-const PORT = process.env.PORT || 3000;  
-const server = app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'Index.html'));
 });
 
 const io = socketIo(server, {
   cors: {
     origin: "*",
     methods: ["GET", "POST"]
-  },
-  transports: ['websocket'],  
-  pingTimeout: 60000,         
-  pingInterval: 25000
+  }
 });
 
 // Game State
