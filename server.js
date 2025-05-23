@@ -4,7 +4,7 @@ const cors = require('cors');
 
 const app = express();
 app.use(cors());
-app.use(express.static('Public'));
+app.use(express.static('public'));
 
 const PORT = 3000;
 const server = app.listen(PORT, () => {
