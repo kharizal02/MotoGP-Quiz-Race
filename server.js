@@ -16,7 +16,7 @@ const io = socketIo(server, {
     origin: "*",
     methods: ["GET", "POST"]
   },
-  transport: ["websocket"]
+  transports: ["websocket"]
 });
 
 // Game State
