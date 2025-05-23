@@ -171,7 +171,9 @@
 
   <script>
     // Socket.io Connection
-    const socket = io();
+    const socket = io("https://motogp-quiz-race.onrender.com", {
+      transports: ["websocket"]
+    });
     let playerId;
     let currentQuestion;
     let questionStartTime;
