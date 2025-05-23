@@ -40,6 +40,20 @@
     .ready-badge {
       animation: pulse 2s infinite;
     }
+    @media print {
+    body * {
+        visibility: hidden;
+    }
+    #finalScores, #finalScores * {
+        visibility: visible;
+    }
+    #finalScores {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+    }
+    }
   </style>
 </head>
 <body class="bg-gray-900 min-h-screen">
@@ -149,31 +163,28 @@
 
     <!-- Game Over Screen -->
     <div id="gameOverScreen" class="hidden mt-6">
-      <div class="bg-gray-800 rounded-xl p-8 text-center">
+        <div class="bg-gray-800 rounded-xl p-8 text-center">
         <h2 class="text-3xl font-bold text-white mb-4">🏁 Game Selesai!</h2>
         <div id="winnerAnnouncement" class="mb-6">
-          <!-- Winner announcement will appear here -->
+        <!-- Winner announcement will appear here -->
         </div>
         <div id="finalScores" class="mb-6">
-          <!-- Final scores will appear here -->
+        <!-- Final scores will appear here -->
         </div>
         <div class="flex gap-4 justify-center">
-          <button id="playAgainBtn" class="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-lg">
+        <button id="playAgainBtn" class="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-lg">
             Main Lagi
-          </button>
-          <button id="downloadPdfBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg">
+        </button>
+        <button id="downloadPdfBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg">
             Download Hasil
-          </button>
+        </button>
         </div>
-      </div>
     </div>
-  </div>
+    </div>
 
   <script>
     // Socket.io Connection
-    const socket = io("https://render.com/docs/web-services#port-binding", {
-      transports: ["websocket"]
-    });
+    const socket = io();
     let playerId;
     let currentQuestion;
     let questionStartTime;
@@ -205,7 +216,6 @@
     const winnerAnnouncement = document.getElementById('winnerAnnouncement');
     const finalScores = document.getElementById('finalScores');
     const playAgainBtn = document.getElementById('playAgainBtn');
-    const downloadPdfBtn = document.getElementById('downloadPdfBtn');
 
     // Color Selection
     document.querySelectorAll('.color-option').forEach(option => {
@@ -275,9 +285,6 @@
       readyBtn.textContent = 'Siap Balap';
     });
 
-    // Download PDF Button
-    downloadPdfBtn.addEventListener('click', generatePDF);
-
     // Socket Events
     socket.on('connect', () => {
       playerId = socket.id;
@@ -312,29 +319,24 @@
       gameOverScreenEl.classList.add('hidden');
     });
 
-    socket.on('newQuestion', (data) => {
-      console.log('New question:', data);
-      currentQuestion = {
-        id: data.id,
-        text: data.text,
-        options: data.options,
-        answer: -1 // Not needed on client side
-      };
-      questionStartTime = data.startTime;
+    socket.on('newQuestion', (question) => {
+      console.log('New question:', question);
+      currentQuestion = question;
+      questionStartTime = question.startTime;
       hasAnswered = false;
       
       // Hide answer feedback
       answerFeedback.classList.add('hidden');
       
       // Update UI
-      questionTextEl.textContent = data.text;
-      questionCounterEl.textContent = `Q${data.current}/${data.total}`;
+      questionTextEl.textContent = question.text;
+      questionCounterEl.textContent = `Q${question.current}/${question.total}`;
       
       // Clear previous options
       optionsEl.innerHTML = '';
       
       // Add new options
-      data.options.forEach((option, index) => {
+      question.options.forEach((option, index) => {
         const optionBtn = document.createElement('button');
         optionBtn.className = 'bg-gray-700 hover:bg-gray-600 text-white p-3 rounded-lg text-left transition-colors';
         optionBtn.textContent = option;
@@ -346,10 +348,36 @@
       startTimer(15);
     });
 
-    socket.on('leaderboardUpdate', (players) => {
-      console.log('Leaderboard update:', players);
-      updateLeaderboard(players);
-      updateRaceTrack(players);
+    socket.on('gameUpdate', (data) => {
+      console.log('Game update:', data);
+      updateRaceTrack(data.players);
+      updateLeaderboard(data.players);
+    });
+
+    socket.on('showAnswer', (data) => {
+      // Show correct answer
+      answerFeedback.classList.remove('hidden');
+      answerFeedback.className = 'mt-4 p-4 rounded-lg text-center bg-blue-600 text-white';
+      answerFeedback.innerHTML = `<strong>Jawaban yang benar:</strong> ${data.correctText}`;
+    });
+
+    socket.on('answerFeedback', (data) => {
+      console.log('Answer feedback:', data);
+      
+      // Show feedback
+      answerFeedback.classList.remove('hidden');
+      if (data.correct) {
+        answerFeedback.className = 'mt-4 p-4 rounded-lg text-center bg-green-600 text-white';
+        answerFeedback.innerHTML = '<strong>Benar! +10 poin</strong>';
+      } else {
+        answerFeedback.className = 'mt-4 p-4 rounded-lg text-center bg-red-600 text-white';
+        answerFeedback.innerHTML = '<strong>Salah!</strong>';
+      }
+    });
+
+    socket.on('timeUp', () => {
+      console.log('Time up!');
+      submitAnswer(-1);
     });
 
     socket.on('gameOver', (data) => {
@@ -380,32 +408,31 @@
 
     // Game Functions
     function submitAnswer(answerIndex) {
-      if (hasAnswered) return;
-      
-      hasAnswered = true;
-      clearInterval(timerInterval);
-      
-      document.querySelectorAll('#options button').forEach((btn, index) => {
+    if (hasAnswered) return;
+    
+    hasAnswered = true;
+    clearInterval(timerInterval);
+    
+    document.querySelectorAll('#options button').forEach((btn, index) => {
         btn.disabled = true;
         btn.classList.add('opacity-50');
         if (index === answerIndex) {
-          btn.classList.add('bg-blue-600');
+        btn.classList.add('bg-blue-600');
         }
-      });
-      
-      // Show feedback that answer was submitted
-      answerFeedback.classList.remove('hidden');
-      answerFeedback.className = 'mt-4 p-4 rounded-lg text-center bg-blue-600 text-white';
-      answerFeedback.innerHTML = '<strong>Mempersiapkan soal berikutnya...</strong>';
-      
-      if (answerIndex >= 0) {
+    });
+    
+    answerFeedback.classList.remove('hidden');
+    answerFeedback.className = 'mt-4 p-4 rounded-lg text-center bg-blue-600 text-white';
+    answerFeedback.innerHTML = '<strong>Mempersiapkan soal berikutnya...</strong>';
+    
+    if (answerIndex >= 0) {
         socket.emit('submitAnswer', {
-          answerIndex: answerIndex,
-          questionStartTime: questionStartTime
+        questionId: currentQuestion.id,
+        answerIndex: answerIndex,
+        questionStartTime: questionStartTime
         });
-      }
     }
-
+    }
     function startTimer(seconds) {
       clearInterval(timerInterval);
       timeLeft = seconds;
@@ -418,20 +445,14 @@
         if (timeLeft <= 0) {
           clearInterval(timerInterval);
           if (!hasAnswered) {
-            // Auto submit when time runs out
+            // Auto submit ketika waktu habis
             answerFeedback.classList.remove('hidden');
             answerFeedback.className = 'mt-4 p-4 rounded-lg text-center bg-gray-600 text-white';
-            answerFeedback.innerHTML = '<strong>Waktu habis!</strong> Mempersiapkan soal berikutnya...';
+            answerFeedback.innerHTML = '<strong>Waktu habis!</strong> Menunggu pertanyaan berikutnya...';
             
             document.querySelectorAll('#options button').forEach(btn => {
               btn.disabled = true;
               btn.classList.add('opacity-50');
-            });
-            
-            // Submit empty answer
-            socket.emit('submitAnswer', {
-              answerIndex: -1,
-              questionStartTime: questionStartTime
             });
           }
         }
@@ -459,16 +480,14 @@
       
       playersTrackEl.innerHTML = '';
       
-      // Find max score for positioning
-      const maxScore = Math.max(...players.map(p => p.score), 1);
-      
-      players.forEach(player => {
+      Object.values(players).forEach(player => {
         const playerEl = document.createElement('div');
         playerEl.className = `player-bike absolute top-1/2 transform -translate-y-1/2 w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-xs border-2 border-white`;
         playerEl.style.backgroundColor = player.color;
         
-        // Calculate position based on score
-        const position = Math.min(90, (player.score / maxScore) * 90);
+        // Calculate position based on score (max possible score for positioning)
+        const maxScore = Math.max(...Object.values(players).map(p => p.score), 1);
+        const position = Math.min(90, (player.score / Math.max(maxScore, 500)) * 90);
         playerEl.style.left = `${position}%`;
         
         playerEl.title = `${player.name}: ${player.score} points`;
@@ -480,7 +499,9 @@
     function updateLeaderboard(players) {
       if (!players) return;
       
-      leaderboardListEl.innerHTML = players.map((player, index) => `
+      const sortedPlayers = Object.values(players).sort((a, b) => b.score - a.score);
+      
+      leaderboardListEl.innerHTML = sortedPlayers.map((player, index) => `
         <div class="flex items-center p-2 ${player.id === playerId ? 'bg-gray-700 rounded-lg' : ''}">
           <span class="w-6 text-center font-bold text-white">${index + 1}.</span>
           <div class="w-6 h-6 rounded-full mr-3 ml-2" style="background-color: ${player.color}"></div>
@@ -490,44 +511,73 @@
       `).join('');
     }
 
-    // PDF Generation
+    socket.on('nextQuestionForPlayer', (data) => {
+    // Update indeks soal saat ini
+        gameState.currentQuestion = data.nextQuestionIndex;
+        
+        // Dapatkan soal berikutnya
+        const nextQuestion = gameState.questions[data.nextQuestionIndex];
+        
+        // Update UI untuk soal baru
+        hasAnswered = false;
+        questionTextEl.textContent = nextQuestion.text;
+        questionCounterEl.textContent = `Q${data.nextQuestionIndex + 1}/${data.totalQuestions}`;
+        
+        // Clear previous options
+        optionsEl.innerHTML = '';
+        
+        // Add new options
+        nextQuestion.options.forEach((option, index) => {
+            const optionBtn = document.createElement('button');
+            optionBtn.className = 'bg-gray-700 hover:bg-gray-600 text-white p-3 rounded-lg text-left transition-colors';
+            optionBtn.textContent = option;
+            optionBtn.onclick = () => submitAnswer(index);
+            optionsEl.appendChild(optionBtn);
+        });
+        
+    // Start timer baru
+    startTimer(15);
+    });
+
+    // Fungsi untuk generate PDF
     function generatePDF() {
-      const { jsPDF } = window.jspdf;
-      
-      // Create temporary div for PDF content
-      const pdfContent = document.createElement('div');
-      pdfContent.style.position = 'absolute';
-      pdfContent.style.left = '-9999px';
-      pdfContent.style.backgroundColor = '#1F2937'; // bg-gray-800
-      pdfContent.style.padding = '20px';
-      pdfContent.style.borderRadius = '12px';
-      pdfContent.style.width = '400px';
-      
-      // Clone content
-      const winnerClone = winnerAnnouncement.cloneNode(true);
-      const scoresClone = finalScores.cloneNode(true);
-      
-      // Add title
-      const title = document.createElement('h1');
-      title.textContent = 'Hasil MotoGP Quiz Race';
-      title.style.color = '#FFFFFF';
-      title.style.fontSize = '24px';
-      title.style.fontWeight = 'bold';
-      title.style.marginBottom = '20px';
-      title.style.textAlign = 'center';
-      
-      pdfContent.appendChild(title);
-      pdfContent.appendChild(winnerClone);
-      pdfContent.appendChild(scoresClone);
-      
-      document.body.appendChild(pdfContent);
-      
-      // Generate PDF
-      html2canvas(pdfContent).then(canvas => {
+    // Gunakan jsPDF dari window jika menggunakan versi umd
+    const { jsPDF } = window.jspdf;
+    
+    // Buat elemen sementara untuk leaderboard
+    const tempDiv = document.createElement('div');
+    tempDiv.style.position = 'absolute';
+    tempDiv.style.left = '-9999px';
+    tempDiv.style.backgroundColor = '#1F2937'; // bg-gray-800
+    tempDiv.style.padding = '20px';
+    tempDiv.style.borderRadius = '12px';
+    tempDiv.style.width = '400px';
+    
+    // Clone leaderboard content
+    const leaderboardContent = document.getElementById('finalScores').cloneNode(true);
+    const winnerContent = document.getElementById('winnerAnnouncement').cloneNode(true);
+    
+    // Tambahkan judul
+    const title = document.createElement('h1');
+    title.textContent = 'Hasil MotoGP Quiz Race';
+    title.style.color = '#FFFFFF';
+    title.style.fontSize = '24px';
+    title.style.fontWeight = 'bold';
+    title.style.marginBottom = '20px';
+    title.style.textAlign = 'center';
+    
+    tempDiv.appendChild(title);
+    tempDiv.appendChild(winnerContent);
+    tempDiv.appendChild(leaderboardContent);
+    
+    document.body.appendChild(tempDiv);
+    
+    // Gunakan html2canvas untuk capture elemen
+    html2canvas(tempDiv).then(canvas => {
         const imgData = canvas.toDataURL('image/png');
         const pdf = new jsPDF({
-          orientation: 'portrait',
-          unit: 'mm'
+        orientation: 'portrait',
+        unit: 'mm'
         });
         
         const imgProps = pdf.getImageProperties(imgData);
@@ -535,12 +585,15 @@
         const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
         
         pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-        pdf.save('hasil-motoGP-quiz.pdf');
+        pdf.save('hasil.pdf');
         
-        // Remove temporary element
-        document.body.removeChild(pdfContent);
-      });
+        // Hapus elemen sementara
+        document.body.removeChild(tempDiv);
+    });
     }
+
+    // Event listener untuk tombol download
+    document.getElementById('downloadPdfBtn').addEventListener('click', generatePDF);
   </script>
 </body>
 </html>
