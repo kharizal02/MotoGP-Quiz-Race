@@ -9,7 +9,7 @@ app.use(express.static('public'));
 
 // Add this fallback route for root path
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+  res.sendFile(path.join(__dirname, 'public', 'Index.html'));
 });
 
 const PORT = process.env.PORT || 3000;  
