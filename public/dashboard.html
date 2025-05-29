@@ -4,196 +4,486 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CT Racing</title>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
     <style>
-        
-        body {
+        * {
             margin: 0;
             padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
             min-height: 100vh;
             background: linear-gradient(180deg, 
-                #1a1a2e 0%, 
-                #16213e 100%);
+                #0f2027 0%,
+                #203a43 30%,
+                #2c5364 70%,
+                #1e3c72 100%);
             overflow-x: hidden;
-            position: relative;
             font-family: 'Press Start 2P', cursive;
             text-align: center;
-            height: 100vh;
             display: flex;
             flex-direction: column;
-            justify-content: space-between;
-            overflow: hidden;
-            position: relative; /* Tambahkan ini */
+            position: relative;
         }
         
         .sky {
-            position: relative;
-            height: 150px;
-            width: 100%;
-        }
-        
-        .cloud {
-            position: absolute;
-            background-image: url('assets/awan.png');
-            background-repeat: no-repeat;
-            background-size: contain;
-            opacity: 0.9;
-            animation: cloudMove linear infinite;
-            filter: drop-shadow(0 0 5px rgba(255,255,255,0.5));
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 150px;
+        width: 100%;
+        z-index: 1;
+        pointer-events: none;
         }
 
-        /* Variasi ukuran dan posisi awan */
+        .cloud {
+        position: absolute;
+        background-image: url('assets/awan.png');
+        background-repeat: no-repeat;
+        background-size: contain;
+        opacity: 0.9;
+        animation: cloudMove linear infinite;
+        filter: drop-shadow(0 0 5px rgba(255,255,255,0.5));
+        }
+
+        /* Cloud variations */
         .cloud:nth-child(1) {
-            width: 80px;
-            height: 48px;
-            top: 20px;
-            left: 5%;
-            animation-duration: 120s;
-            animation-delay: -30s;
+        width: 80px;
+        height: 48px;
+        top: 20px;
+        left: 5%;
+        animation-duration: 120s;
+        animation-delay: -30s;
         }
         .cloud:nth-child(2) {
-            width: 120px;
-            height: 72px;
-            top: 40px;
-            left: 20%;
-            animation-duration: 150s;
-            transform: scale(0.8);
+        width: 120px;
+        height: 72px;
+        top: 40px;
+        left: 20%;
+        animation-duration: 150s;
+        transform: scale(0.8);
         }
         .cloud:nth-child(3) {
-            width: 150px;
-            height: 90px;
-            top: 10px;
-            left: 35%;
-            animation-duration: 180s;
-            animation-delay: -60s;
+        width: 150px;
+        height: 90px;
+        top: 10px;
+        left: 35%;
+        animation-duration: 180s;
+        animation-delay: -60s;
         }
         .cloud:nth-child(4) {
-            width: 60px;
-            height: 36px;
-            top: 50px;
-            left: 50%;
-            animation-duration: 100s;
+        width: 60px;
+        height: 36px;
+        top: 50px;
+        left: 50%;
+        animation-duration: 100s;
         }
         .cloud:nth-child(5) {
-            width: 200px;
-            height: 120px;
-            top: 30px;
-            left: 65%;
-            animation-duration: 200s;
-            animation-delay: -90s;
+        width: 200px;
+        height: 120px;
+        top: 30px;
+        left: 65%;
+        animation-duration: 200s;
+        animation-delay: -90s;
         }
         .cloud:nth-child(6) {
-            width: 90px;
-            height: 54px;
-            top: 10px;
-            left: 80%;
-            animation-duration: 140s;
+        width: 90px;
+        height: 54px;
+        top: 10px;
+        left: 80%;
+        animation-duration: 140s;
         }
         .cloud:nth-child(7) {
-            width: 180px;
-            height: 108px;
-            top: 60px;
-            left: 10%;
-            animation-duration: 220s;
-            animation-delay: -45s;
+        width: 180px;
+        height: 108px;
+        top: 60px;
+        left: 10%;
+        animation-duration: 220s;
+        animation-delay: -45s;
         }
         .cloud:nth-child(8) {
-            width: 70px;
-            height: 42px;
-            top: 25px;
-            left: 75%;
-            animation-duration: 110s;
+        width: 70px;
+        height: 42px;
+        top: 25px;
+        left: 75%;
+        animation-duration: 110s;
         }
-        
+
         @keyframes cloudMove {
-            from { transform: translateX(-100px); }
-            to { transform: translateX(calc(100vw + 100px)); }
+        from { transform: translateX(-100px); }
+        to { transform: translateX(calc(100vw + 100px)); }
+        }
+
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            z-index: 10;
+            min-height: 100vh;
         }
         
         .header {
-            padding: 30px 0 50px 0;
+            margin-bottom: 40px;
             position: relative;
-            z-index: 10; /* Naikkan z-index */
+        }
+
+        /* Motorcycle Animation */
+        .motorcycle-container {
+            position: absolute;
+            top: -120px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            height: 80px;
+            z-index: 15;
+            overflow: hidden;
+        }
+
+        .motorcycle {
+            position: absolute;
+            width: 80px;
+            height: 60px;
+            background-image: url('assets/Motor.png');
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            animation: motorcycleRide 4s linear infinite;
+            filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));
+        }
+
+        @keyframes motorcycleRide {
+            0% {
+                left: -100px;
+                transform: scaleX(1);
+            }
+            48% {
+                left: calc(50% - 40px);
+                transform: scaleX(1);
+            }
+            52% {
+                left: calc(50% - 40px);
+                transform: scaleX(-1);
+            }
+            100% {
+                left: calc(100% + 100px);
+                transform: scaleX(-1);
+            }
+        }
+
+        /* Racing trail effect */
+        .motorcycle::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: -20px;
+            width: 30px;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #ff00cc, transparent);
+            animation: trailEffect 4s linear infinite;
+            opacity: 0.7;
+        }
+
+        @keyframes trailEffect {
+            0%, 100% { opacity: 0; }
+            25%, 75% { opacity: 0.8; }
         }
     
         h1 {
             font-size: 4rem;
-            color: white;
+            color: #ffffff;
             text-shadow: 
-                /* Lapisan outline merah yang tebal */
-                0 0 4px red,
-                0 0 8px red,
-                0 0 12px red,
-                0 0 16px red,
-                0 0 20px red,
+                /* Enhanced glowing effect with new palette */
+                0 0 6px #ffd700,
+                0 0 12px #ff00cc,
+                0 0 18px #3333ff,
                 
-                /* Outline solid merah di semua sisi */
-                4px 0 0 red,
-                -4px 0 0 red,
-                0 4px 0 red,
-                0 -4px 0 red,
+                /* Outline solid */
+                3px 0 0 #ff416c,
+                -3px 0 0 #ff416c,
+                0 3px 0 #ff416c,
+                0 -3px 0 #ff416c,
                 
-                /* Bayangan hitam untuk efek tambahan */
-                6px 6px 0 black;
+                /* Deep shadow for depth */
+                4px 4px 0 #1e3c72,
+                6px 6px 10px rgba(0, 0, 0, 0.8);
             margin-bottom: 10px;
-            letter-spacing: 2px;
+            letter-spacing: 3px;
+            animation: titleGlow 3s ease-in-out infinite alternate;
+        }
+        
+        @keyframes titleGlow {
+            0% {
+                text-shadow: 
+                    0 0 6px #ffd700,
+                    0 0 12px #ff00cc,
+                    0 0 18px #3333ff,
+                    3px 0 0 #ff416c,
+                    -3px 0 0 #ff416c,
+                    0 3px 0 #ff416c,
+                    0 -3px 0 #ff416c,
+                    4px 4px 0 #1e3c72,
+                    6px 6px 10px rgba(0, 0, 0, 0.8);
+            }
+            100% {
+                text-shadow: 
+                    0 0 12px #ffd700,
+                    0 0 18px #ff00cc,
+                    0 0 24px #3333ff,
+                    3px 0 0 #ff416c,
+                    -3px 0 0 #ff416c,
+                    0 3px 0 #ff416c,
+                    0 -3px 0 #ff416c,
+                    4px 4px 0 #1e3c72,
+                    6px 6px 15px rgba(0, 0, 0, 0.9);
+            }
         }
 
         .buttons {
-            margin: 40px 0;
-            position: relative;
-            z-index: 20; /* Naikkan z-index */
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 30px;
+            gap: 25px;
         }
 
         .btn {
-            background-color: #e74c3c;
+            background: linear-gradient(135deg, #ff416c 0%, #ff4b2b 100%);
             color: white;
-            border: none;
-            padding: 15px 30px;
-            font-size: 1.5rem;
+            border: 3px solid #ffd166;
+            padding: 18px 40px;
+            font-size: 1.2rem;
             cursor: pointer;
-            font-family: 'Press Start 2P', cursive;
-            border-radius: 10px;
-            box-shadow: 5px 5px 0 #000;
-            transition: all 0.2s;
-            white-space: nowrap;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-weight: 600;
+            border-radius: 12px;
+            box-shadow: 
+                0 8px 0 #1e3c72,
+                0 12px 20px rgba(0, 0, 0, 0.4),
+                inset 0 2px 0 rgba(255, 255, 255, 0.2);
+            transition: all 0.15s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            position: relative;
+            overflow: hidden;
+            min-width: 200px;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            transition: left 0.6s;
+        }
+        
+        .btn:hover::before {
+            left: 100%;
         }
 
         .btn:hover {
-            transform: translate(2px, 2px);
-            box-shadow: 3px 3px 0 #000;
+            transform: translateY(4px);
+            box-shadow: 
+                0 4px 0 #1e3c72,
+                0 8px 15px rgba(0, 0, 0, 0.3),
+                inset 0 2px 0 rgba(255, 255, 255, 0.3);
+            background: linear-gradient(135deg, #ff758c 0%, #ff7eb3 100%);
+        }
+        
+        .btn:active {
+            transform: translateY(8px);
+            box-shadow: 
+                0 0 0 #1e3c72,
+                0 4px 10px rgba(0, 0, 0, 0.2),
+                inset 0 2px 0 rgba(255, 255, 255, 0.1);
         }
 
-        .footer {
-            position: fixed; /* Ubah ke absolute */
-            bottom: 0;
+        /* Efek cahaya bergerak - updated colors */
+        .moving-lights {
+            position: fixed;
+            bottom: 10%;
             left: 0;
             right: 0;
-            height: 100%;
-            width: 100%;
-            background-image: url('assets/4.png');
-            background-repeat: no-repeat;
-            background-size: cover;
-            background-position: center;
-            z-index: 1; /* Lebih rendah dari konten utama */
+            height: 6px;
+            background: linear-gradient(90deg, 
+                transparent 0%, 
+                #ff00cc 20%, 
+                #3333ff 40%,
+                #00ccff 60%, 
+                #ffd166 80%, 
+                transparent 100%);
+            opacity: 0.7;
+            animation: movingLights 3s linear infinite;
+            z-index: 1;
+        }
+        
+        @keyframes movingLights {
+            0% { transform: translateX(-100%); opacity: 0; }
+            50% { opacity: 1; }
+            100% { transform: translateX(100%); opacity: 0; }
         }
 
-          /* Media query untuk perangkat mobile */
-        @media only screen and (max-width: 768px) {
-            .footer {
-                height: 20%; /* 40% dari viewport height di mobile */
-            }
-            
+        /* Media queries untuk responsif - Enhanced */
+        @media only screen and (max-width: 1200px) {
             h1 {
-                font-size: 2.5rem; /* Ukuran font lebih kecil di mobile */
+                font-size: 3.5rem;
             }
             
             .btn {
-                padding: 12px 24px;
-                font-size: 1.2rem;
+                padding: 16px 35px;
+                font-size: 1.1rem;
+                min-width: 180px;
+            }
+
+            .motorcycle {
+                width: 70px;
+                height: 50px;
+            }
+        }
+        
+        @media only screen and (max-width: 992px) {
+            h1 {
+                font-size: 3rem;
+            }
+            
+            .btn {
+                padding: 15px 30px;
+                font-size: 1rem;
+                min-width: 160px;
+            }
+            
+            .main-content {
+                padding: 40px 20px;
+            }
+
+            .motorcycle-container {
+                top: -100px;
+                height: 70px;
+            }
+
+            .motorcycle {
+                width: 60px;
+                height: 45px;
+            }
+        }
+
+        @media only screen and (max-width: 768px) {            
+            h1 {
+                font-size: 2.5rem;
+                letter-spacing: 2px;
+            }
+            
+            .btn {
+                padding: 14px 28px;
+                font-size: 0.95rem;
+                min-width: 150px;
+            }
+            
+            .main-content {
+                padding: 30px 15px;
+            }
+            
+            .cloud {
+                transform: scale(0.7);
+            }
+            
+            .buttons {
+                gap: 20px;
+            }
+
+            .motorcycle-container {
+                top: -90px;
+                height: 60px;
+            }
+
+            .motorcycle {
+                width: 50px;
+                height: 38px;
+            }
+        }
+        
+        @media only screen and (max-width: 576px) {
+            h1 {
+                font-size: 2rem;
+                letter-spacing: 1px;
+            }
+            
+            .btn {
+                padding: 12px 25px;
+                font-size: 0.9rem;
+                min-width: 140px;
+            }
+            
+            .main-content {
+                padding: 25px 10px;
+            }
+
+            .motorcycle-container {
+                top: -80px;
+                height: 50px;
+            }
+
+            .motorcycle {
+                width: 45px;
+                height: 34px;
+            }
+        }
+        
+        @media only screen and (max-width: 480px) {
+            h1 {
+                font-size: 1.8rem;
+            }
+            
+            .btn {
+                padding: 10px 20px;
+                font-size: 0.85rem;
+                min-width: 130px;
+            }
+            
+            .cloud {
+                transform: scale(0.5);
+            }
+
+            .motorcycle-container {
+                top: -70px;
+                height: 45px;
+            }
+
+            .motorcycle {
+                width: 40px;
+                height: 30px;
+            }
+        }
+        
+        @media only screen and (max-width: 360px) {
+            h1 {
+                font-size: 1.6rem;
+            }
+            
+            .btn {
+                padding: 8px 18px;
+                font-size: 0.8rem;
+                min-width: 120px;
+            }
+            
+            .buttons {
+                gap: 15px;
+            }
+
+            .motorcycle-container {
+                top: -60px;
+                height: 40px;
+            }
+
+            .motorcycle {
+                width: 35px;
+                height: 26px;
             }
         }
     </style>
@@ -206,34 +496,52 @@
         <div class="cloud"></div>
         <div class="cloud"></div>
         <div class="cloud"></div>
-        <div class="cloud"></div>
-        <div class="cloud"></div>
     </div>
     
-    <div class="header">
-        <h1>CT RACING</h1>
+    <div class="main-content">
+        <div class="header">
+            <div class="motorcycle-container">
+                <div class="motorcycle"></div>
+            </div>
+            <h1>CT RACING</h1>
+        </div>
+        
+        <div class="buttons">
+            <button class="btn" id="startBtn">Start Games</button>
+            <button class="btn" id="howToPlayBtn">How to Play</button>
+        </div>
     </div>
     
-    <div class="buttons">
-        <button class="btn" id="startBtn">START GAMES</button>
-        <button class="btn" id="howToPlayBtn">HOW TO PLAY</button>
-    </div>
-    
-    <div class="road-container">
-        <div class="road"></div>
-    </div>
-    
-    <div class="footer"></div>
+    <div class="moving-lights"></div>
     
     <script>
         document.getElementById('startBtn').addEventListener('click', function() {
-            window.location.href = 'game.html';
-            // Tambahkan logika mulai game di sini
+            // Efek suara klik (opsional)
+            this.style.transform = 'scale(0.95)';
+            setTimeout(() => {
+                this.style.transform = '';
+                window.location.href = 'game.html';
+            }, 150);
         });
         
         document.getElementById('howToPlayBtn').addEventListener('click', function() {
-            // Pindah ke halaman aturan.html
-            window.location.href = 'aturan.html';
+            // Efek suara klik (opsional)
+            this.style.transform = 'scale(0.95)';
+            setTimeout(() => {
+                this.style.transform = '';
+                window.location.href = 'aturan.html';
+            }, 150);
+        });
+        
+        // Efek parallax sederhana untuk awan
+        window.addEventListener('scroll', function() {
+            const clouds = document.querySelectorAll('.cloud');
+            const scrolled = window.pageYOffset;
+            
+            clouds.forEach((cloud, index) => {
+                const speed = 0.5 + (index * 0.1);
+                cloud.style.transform += ` translateY(${scrolled * speed}px)`;
+            });
         });
     </script>
 </body>

@@ -154,8 +154,10 @@
       flex-direction: column;
       min-height: 100vh;
       background: linear-gradient(180deg, 
-        #1a1a2e 0%, 
-        #16213e 100%);
+           #0f2027 0%,
+           #203a43 30%,
+           #2c5364 70%,
+           #1e3c72 100%);
       overflow-x: hidden;
       position: relative;
     }
@@ -560,41 +562,41 @@
     <div id="lobby" class="bg-gray-800 rounded-xl shadow-2xl overflow-hidden">
       <div class="bg-red-600 py-4 px-6 text-center">
         <h1 class="text-3xl font-bold text-white">🏍 CT Racing</h1>
-        <p class="text-red-100">Race dengan menjawab pertanyaan!</p>
+        <p class="text-red-100">Race by answering questions!</p>
       </div>
       
       <div class="p-6">
         <div class="mb-4">
-          <label class="block text-gray-300 mb-2">Nama Pembalap:</label>
-          <input id="playerName" type="text" placeholder="Masukkan nama kamu" 
+          <label class="block text-gray-300 mb-2">Racer Name:</label>
+          <input id="playerName" type="text" placeholder="Enter your name" 
                 class="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent text-white">
         </div>
         
         <div class="mb-6">
-          <label class="block text-gray-300 mb-3">Pilih Motor:</label>
+          <label class="block text-gray-300 mb-3">Choose Your Bike:</label>
           <div class="flex gap-3 flex-wrap">
-            <div class="motor-option selected" data-motor="motor2" title="Motor 2">
+            <div class="motor-option selected" data-motor="motor2" title="Bike 2">
               <img src="assets/motor2.png" class="w-12 h-12 object-contain">
             </div>
-            <div class="motor-option" data-motor="motor3" title="Motor 3">
+            <div class="motor-option" data-motor="motor3" title="Bike 3">
               <img src="assets/motor3.png" class="w-12 h-12 object-contain">
             </div>
-            <div class="motor-option" data-motor="motor4" title="Motor 4">
+            <div class="motor-option" data-motor="motor4" title="Bike 4">
               <img src="assets/motor4.png" class="w-12 h-12 object-contain">
             </div>
-            <div class="motor-option" data-motor="motor5" title="Motor 5">
+            <div class="motor-option" data-motor="motor5" title="Bike 5">
               <img src="assets/motor5.png" class="w-12 h-12 object-contain">
             </div>
-            <div class="motor-option" data-motor="motor6" title="Motor 6">
+            <div class="motor-option" data-motor="motor6" title="Bike 6">
               <img src="assets/motor6.png" class="w-12 h-12 object-contain">
             </div>
-            <div class="motor-option" data-motor="motor7" title="Motor 7">
+            <div class="motor-option" data-motor="motor7" title="Bike 7">
               <img src="assets/motor7.png" class="w-12 h-12 object-contain">
             </div>
-            <div class="motor-option" data-motor="motor8" title="Motor 8">
+            <div class="motor-option" data-motor="motor8" title="Bike 8">
               <img src="assets/motor8.png" class="w-12 h-12 object-contain">
             </div>
-            <div class="motor-option" data-motor="motor9" title="Motor 9">
+            <div class="motor-option" data-motor="motor9" title="Bike 9">
               <img src="assets/motor9.png" class="w-12 h-12 object-contain">
             </div>
           </div>
@@ -602,7 +604,7 @@
         
         <button id="joinBtn" 
                 class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-lg transition-all transform hover:scale-105">
-          Gabung Balapan
+          Join Race
         </button>
       </div>
 
@@ -614,20 +616,20 @@
       <!-- Ready Section -->
       <div id="readySection" class="hidden p-6 pt-0">
         <div class="text-center mb-4">
-          <p class="text-gray-300">Menunggu pemain lain siap...</p>
+          <p class="text-gray-300">Waiting for other players to get ready...</p>
           <p id="readyStatus" class="text-sm text-gray-400">
-            Siap: <span id="readyCount">0</span> / <span id="totalPlayers">0</span> pemain
+            Ready: <span id="readyCount">0</span> / <span id="totalPlayers">0</span> players
           </p>
-          <p class="text-xs text-gray-500">Maksimal 50 pemain</p>
+          <p class="text-xs text-gray-500">Maximum 50 players</p>
         </div>
         <div class="flex gap-3">
           <button id="readyBtn" 
                   class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg transition-all">
-            Siap Balap
+            Ready to Race
           </button>
           <button id="notReadyBtn" 
                   class="flex-1 bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-4 rounded-lg transition-all">
-            Tidak Siap
+            Not Ready
           </button>
         </div>
       </div>
@@ -679,16 +681,16 @@
     <!-- Countdown Screen -->
     <div id="countdownScreen" class="hidden fixed inset-0 flex items-center justify-center bg-black bg-opacity-75 z-50">
       <div class="bg-gray-800 rounded-xl p-8 text-center max-w-md w-full">
-        <h2 class="text-3xl font-bold text-white mb-4">🏁 Bersiap-siap!</h2>
+        <h2 class="text-3xl font-bold text-white mb-4">🏁 Get Ready!</h2>
         <div id="countdownNumber" class="text-8xl font-bold text-green-500 mb-4 animate-pulse countdown-text">10</div>
-        <p class="text-gray-300 text-xl">Balapan dimulai dalam...</p>
+        <p class="text-gray-300 text-xl">Race starts in...</p>
       </div>
     </div>
 
     <!-- Game Over Screen -->
     <div id="gameOverScreen" class="hidden w-full">
       <div class="bg-gray-800 rounded-xl p-8 text-center">
-        <h2 class="text-3xl font-bold text-white mb-4">🏁 Game Selesai!</h2>
+        <h2 class="text-3xl font-bold text-white mb-4">🏁 Game Over!</h2>
         <div id="winnerAnnouncement" class="mb-6">
           <!-- Winner announcement will appear here -->
         </div>
@@ -697,10 +699,10 @@
         </div>
         <div class="flex gap-4 justify-center">
           <button id="playAgainBtn" class="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-lg">
-            Main Lagi
+            Play Again
           </button>
           <button id="downloadPdfBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg">
-            Download Hasil
+            Download Results
           </button>
         </div>
       </div>
@@ -784,9 +786,15 @@
       const name = document.getElementById('playerName').value.trim();
       if (!name) return alert('Masukkan nama pembalap!');
       
-      joinBtn.textContent = 'Bergabung...';
-      joinBtn.disabled = true;
+      // Nonaktifkan pemilihan motor setelah join
+      document.querySelectorAll('.motor-option').forEach(opt => {
+        opt.style.pointerEvents = 'none';
+        opt.style.opacity = '0.7';
+      });
       
+      joinBtn.textContent = 'Bergabung...';
+      joinBtn.disabled = true;    
+
       socket.emit('join', { 
         name: name,
         motor: selectedMotor
@@ -851,7 +859,7 @@
             <span class="text-white">${player.name}</span>
           </div>
           <span class="text-sm ${player.isReady ? 'text-green-400' : 'text-gray-400'}">
-            ${player.isReady ? 'Siap ✓' : 'Menunggu...'}
+            ${player.isReady ? 'Siap ✓' : 'Waiting......'}
           </span>
         </div>
       `).join('');
@@ -890,12 +898,7 @@
       console.log('Game actually started');
       countdownScreenEl.classList.add('hidden');
       gameScreenEl.classList.remove('hidden');
-    });
-
-    socket.on('gameActuallyStarted', () => {
-      console.log('Game actually started');
-      countdownScreenEl.classList.add('hidden');
-      gameScreenEl.classList.remove('hidden');
+      document.getElementById('leaderboard').classList.add('hidden'); // Sembunyikan leaderboard
       document.querySelector('.road-container').style.display = 'none';
       document.querySelector('.moving-bikes').style.display = 'none';
     });
@@ -977,30 +980,40 @@
 
     socket.on('gameOver', (data) => {
       showWaitingRoom(null);
-
-      document.getElementById('leaderboard').classList.remove('hidden');
       
       console.log('Game over:', data);
       
       gameScreenEl.classList.add('hidden');
       gameOverScreenEl.classList.remove('hidden');
-      
+      document.getElementById('leaderboard').classList.remove('hidden');      
       // Show winner
       winnerAnnouncement.innerHTML = `
-        <h3 class="text-2xl font-bold text-yellow-400 mb-2">🏆 Pemenang: ${data.winner.name}</h3>
+        <h3 class="text-2xl font-bold text-yellow-400 mb-2">🏆 Winner: ${data.winner.name}</h3>
         <p class="text-gray-300">Skor: ${data.winner.score} poin</p>
         <img src="assets/${data.winner.motor}.png" class="w-16 h-16 mx-auto mt-2 object-contain">
       `;
       
       // Show final scores
       finalScores.innerHTML = `
-        <h4 class="text-lg font-bold text-white mb-3">Skor Akhir:</h4>
+        <h4 class="text-lg font-bold text-white mb-3">🏆 Podium:</h4>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          ${data.scores.slice(0, 3).map((player, index) => `
+            <div class="flex flex-col items-center p-4 rounded-lg ${index === 0 ? 'bg-yellow-500' : index === 1 ? 'bg-gray-400' : 'bg-amber-700'}">
+              <div class="text-4xl mb-2">${index === 0 ? '🥇' : index === 1 ? '🥈' : '🥉'}</div>
+              <img src="assets/${player.motor}.png" class="w-16 h-16 object-contain mb-2">
+              <span class="text-white font-bold text-center">${player.name}</span>
+              <span class="text-white">${player.score} pts</span>
+            </div>
+          `).join('')}
+        </div>
+        <h4 class="text-lg font-bold text-white mb-3">Other Rankings:</h4>
         <div class="space-y-2">
-          ${data.scores.map((player, index) => `
+          ${data.scores.slice(3).map((player, index) => `
             <div class="flex justify-between items-center bg-gray-700 p-2 rounded">
               <div class="flex items-center">
-                <img src="assets/${player.motor}.png" class="w-6 h-6 object-contain mr-2">
-                <span class="text-white">${index + 1}. ${player.name}</span>
+                <span class="w-6 text-center text-gray-400">${index + 4}.</span>
+                <img src="assets/${player.motor}.png" class="w-6 h-6 object-contain mx-2">
+                <span class="text-white">${player.name}</span>
               </div>
               <span class="text-yellow-400 font-bold">${player.score} pts</span>
             </div>
@@ -1083,10 +1096,10 @@
   function updateRaceTrack(topPlayers) {
     if (!topPlayers) return;
     
-    // Clear all tracks
-    document.getElementById('track1').innerHTML = '<div class="track-finish"></div>';
-    document.getElementById('track2').innerHTML = '<div class="track-finish"></div>';
-    document.getElementById('track3').innerHTML = '<div class="track-finish"></div>';
+    // Clear all tracks dan tambahkan finish line
+    document.getElementById('track1').innerHTML = '<div class="track-finish"></div><img src="assets/finish.png" class="track-finish-image" style="position:absolute; right:0; height:100%;">';
+    document.getElementById('track2').innerHTML = '<div class="track-finish"></div><img src="assets/finish.png" class="track-finish-image" style="position:absolute; right:0; height:100%;">';
+    document.getElementById('track3').innerHTML = '<div class="track-finish"></div><img src="assets/finish.png" class="track-finish-image" style="position:absolute; right:0; height:100%;">';
     
     topPlayers.forEach((player, index) => {
       const trackId = `track${index + 1}`;
@@ -1100,14 +1113,15 @@
         <img src="assets/${player.motor}.png" class="motor-image">
       `;
       
-      const maxScore = Math.max(...topPlayers.map(p => p.score), 1);
-      const position = Math.min(90, (player.score / Math.max(maxScore, 500)) * 90);
+      // Hitung progress berdasarkan skor (maksimal 80 poin untuk finish)
+      const position = Math.min(90, (player.score / 80) * 90);
       playerEl.style.left = `${position}%`;
       
       trackEl.appendChild(playerEl);
     });
   }
-    function updateLeaderboard(players) {
+
+  function updateLeaderboard(players) {
       if (!players) return;
       
       const sortedPlayers = players.sort((a, b) => b.score - a.score);

@@ -3,37 +3,38 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CT Racing</title>
+    <title>CT Racing - How to Play</title>
     <style>
-        
-        body {
+        * {
             margin: 0;
             padding: 0;
-            display: flex;
-            flex-direction: column;
+            box-sizing: border-box;
+        }
+        
+        body {
             min-height: 100vh;
             background: linear-gradient(180deg, 
-                #1a1a2e 0%, 
-                #16213e 100%);
-            overflow-x: hidden;
-            position: relative;
+                #0f2027 0%,
+                #203a43 30%,
+                #2c5364 70%,
+                #1e3c72 100%);
             font-family: 'Press Start 2P', cursive;
+            position: relative;
+            overflow-x: hidden;
             text-align: center;
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            overflow: hidden;
-            position: relative; /* Tambahkan ini */
         }
         
-        
+        /* Cloud styles from dashboard */
         .sky {
-            position: relative;
+            position: fixed;
+            top: 0;
+            left: 0;
             height: 150px;
             width: 100%;
+            z-index: 1;
+            pointer-events: none;
         }
-        
+
         .cloud {
             position: absolute;
             background-image: url('assets/awan.png');
@@ -44,7 +45,7 @@
             filter: drop-shadow(0 0 5px rgba(255,255,255,0.5));
         }
 
-        /* Variasi ukuran dan posisi awan */
+        /* Cloud variations */
         .cloud:nth-child(1) {
             width: 80px;
             height: 48px;
@@ -106,106 +107,139 @@
             left: 75%;
             animation-duration: 110s;
         }
-        
+
         @keyframes cloudMove {
             from { transform: translateX(-100px); }
             to { transform: translateX(calc(100vw + 100px)); }
         }
-        
-        .header {
-            padding: 30px 0 50px 0;
-            position: relative;
-            z-index: 10;
-        }
-    
-        h1 {
-            font-size: 4rem;
-            color: white;
-            text-shadow: 
-                0 0 4px red,
-                0 0 8px red,
-                0 0 12px red,
-                0 0 16px red,
-                0 0 20px red,
-                4px 0 0 red,
-                -4px 0 0 red,
-                0 4px 0 red,
-                0 -4px 0 red,
-                6px 6px 0 black;
-            margin-bottom: 30px;
-            letter-spacing: 2px;
-        }
 
-        .buttons {
-            margin: 30px 0;
+        .main-content {
             position: relative;
             z-index: 10;
+            min-height: 100vh;
             display: flex;
             flex-direction: column;
+            justify-content: center;
             align-items: center;
-            gap: 30px;
+            padding: 50px 20px;
         }
 
-        .btn {
-            background-color: #e74c3c;
+        /* Back Button - updated to match dashboard style */
+        .back-btn {
+            position: fixed;
+            top: 30px;
+            left: 30px;
+            z-index: 30;
+            background: linear-gradient(135deg, #ff416c 0%, #ff4b2b 100%);
             color: white;
-            border: none;
-            padding: 15px 30px;
-            font-size: 1.5rem;
+            border: 3px solid #ffd166;
             cursor: pointer;
             font-family: 'Press Start 2P', cursive;
-            border-radius: 10px;
-            box-shadow: 5px 5px 0 #000;
-            transition: all 0.2s;
-            white-space: nowrap;
+            font-size: 0.8rem;
+            padding: 12px 18px;
+            border-radius: 12px;
+            box-shadow: 
+                0 8px 0 #1e3c72,
+                0 12px 20px rgba(0, 0, 0, 0.4),
+                inset 0 2px 0 rgba(255, 255, 255, 0.2);
+            transition: all 0.15s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
         }
 
-        .btn:hover {
-            transform: translate(2px, 2px);
-            box-shadow: 3px 3px 0 #000;
+        .back-btn:hover {
+            transform: translateY(4px);
+            box-shadow: 
+                0 4px 0 #1e3c72,
+                0 8px 15px rgba(0, 0, 0, 0.3),
+                inset 0 2px 0 rgba(255, 255, 255, 0.3);
+            background: linear-gradient(135deg, #ff758c 0%, #ff7eb3 100%);
+        }
+        
+        .back-btn:active {
+            transform: translateY(8px);
+            box-shadow: 
+                0 0 0 #1e3c72,
+                0 4px 10px rgba(0, 0, 0, 0.2),
+                inset 0 2px 0 rgba(255, 255, 255, 0.1);
         }
 
-        .footer {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            height: 100%;
-            width: 100%;
-            background-image: url('assets/4.png');
-            background-repeat: no-repeat;
-            background-size: cover;
-            background-position: center;
-            z-index: 1;
-        }
-
-        /* Rules Container */
+        /* Rules Container - updated style */
         .rules-container {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background-color: rgba(255, 255, 255, 0.9);
-            padding: 30px;
-            border-radius: 15px;
-            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
-            z-index: 20;
-            max-width: 80%;
-            max-height: 70vh;
-            overflow-y: auto;
-            border: 5px solid #e74c3c;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(10px);
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 
+                0 10px 25px rgba(0, 0, 0, 0.5),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            max-width: 700px;
+            width: 90%;
+            position: relative;
+            overflow: hidden;
+            animation: slideUp 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(60px) scale(0.9);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
         }
 
         .rules-title {
-            color: #e74c3c;
+            color: #ffd700;
             font-size: 2rem;
-            margin-bottom: 20px;
-            text-shadow: 3px 3px 0 #000;
+            font-weight: normal;
+            margin-bottom: 30px;
+            text-align: center;
+            text-shadow: 
+                0 0 6px #ffd700,
+                0 0 12px #ff00cc,
+                0 0 18px #3333ff,
+                3px 0 0 #ff416c,
+                -3px 0 0 #ff416c,
+                0 3px 0 #ff416c,
+                0 -3px 0 #ff416c,
+                4px 4px 0 #1e3c72;
+            letter-spacing: 2px;
+            animation: titleGlow 3s ease-in-out infinite alternate;
+        }
+        
+        @keyframes titleGlow {
+            0% {
+                text-shadow: 
+                    0 0 6px #ffd700,
+                    0 0 12px #ff00cc,
+                    0 0 18px #3333ff,
+                    3px 0 0 #ff416c,
+                    -3px 0 0 #ff416c,
+                    0 3px 0 #ff416c,
+                    0 -3px 0 #ff416c,
+                    4px 4px 0 #1e3c72;
+            }
+            100% {
+                text-shadow: 
+                    0 0 12px #ffd700,
+                    0 0 18px #ff00cc,
+                    0 0 24px #3333ff,
+                    3px 0 0 #ff416c,
+                    -3px 0 0 #ff416c,
+                    0 3px 0 #ff416c,
+                    0 -3px 0 #ff416c,
+                    4px 4px 0 #1e3c72;
+            }
         }
 
         .rules-list {
             text-align: left;
-            color: #333;
+            color: white;
             font-size: 0.9rem;
             line-height: 1.8;
             list-style-type: none;
@@ -213,70 +247,148 @@
         }
 
         .rules-list li {
-            margin-bottom: 15px;
+            margin-bottom: 20px;
             position: relative;
-            padding-left: 30px;
+            padding: 15px 20px 15px 40px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            border-left: 4px solid #ff416c;
+            box-shadow: 
+                0 4px 15px rgba(0, 0, 0, 0.2),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+            opacity: 0;
+            transform: translateX(-30px);
+            animation: slideInLeft 0.6s ease forwards;
         }
 
-        /* Back Button */
-        .back-btn {
+        .rules-list li:nth-child(1) { animation-delay: 0.1s; }
+        .rules-list li:nth-child(2) { animation-delay: 0.2s; }
+        .rules-list li:nth-child(3) { animation-delay: 0.3s; }
+        .rules-list li:nth-child(4) { animation-delay: 0.4s; }
+        .rules-list li:nth-child(5) { animation-delay: 0.5s; }
+        .rules-list li:nth-child(6) { animation-delay: 0.6s; }
+
+        @keyframes slideInLeft {
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .rules-list li:hover {
+            transform: translateX(5px);
+            background: rgba(255, 255, 255, 0.15);
+            box-shadow: 
+                0 6px 20px rgba(0, 0, 0, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.2);
+        }
+
+        .step-number {
             position: absolute;
-            top: 20px;
-            left: 20px;
-            z-index: 30;
-            background: none;
-            border: none;
-            cursor: pointer;
-            font-size: 2rem;
-            color: #e74c3c;
-            text-shadow: 2px 2px 0 #000;
-            transition: all 0.2s;
+            left: -15px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 30px;
+            height: 30px;
+            background: linear-gradient(135deg, #ff416c 0%, #ff4b2b 100%);
+            color: white;
+            border: 2px solid #ffd166;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
         }
 
-        .back-btn:hover {
-            transform: translate(-2px, 0);
+        /* Moving lights from dashboard */
+        .moving-lights {
+            position: fixed;
+            bottom: 10%;
+            left: 0;
+            right: 0;
+            height: 6px;
+            background: linear-gradient(90deg, 
+                transparent 0%, 
+                #ff00cc 20%, 
+                #3333ff 40%,
+                #00ccff 60%, 
+                #ffd166 80%, 
+                transparent 100%);
+            opacity: 0.7;
+            animation: movingLights 3s linear infinite;
+            z-index: 1;
+        }
+        
+        @keyframes movingLights {
+            0% { transform: translateX(-100%); opacity: 0; }
+            50% { opacity: 1; }
+            100% { transform: translateX(100%); opacity: 0; }
         }
 
-        /* Media query untuk perangkat mobile */
+        /* Media queries untuk responsif */
         @media only screen and (max-width: 768px) {
-            .footer {
-                height: 20%;
-            }
-            
-            h1 {
-                font-size: 2.5rem;
-            }
-            
-            .btn {
-                padding: 12px 24px;
-                font-size: 1.2rem;
+            .back-btn {
+                top: 20px;
+                left: 20px;
+                font-size: 0.7rem;
+                padding: 10px 15px;
             }
 
             .rules-container {
-                padding: 15px;
-                max-width: 90%;
+                padding: 30px 20px;
+                max-width: 95%;
             }
 
             .rules-title {
                 font-size: 1.5rem;
+                margin-bottom: 25px;
             }
 
             .rules-list {
                 font-size: 0.8rem;
             }
 
-            .back-btn {
-                font-size: 1.5rem;
-                top: 15px;
-                left: 15px;
+            .rules-list li {
+                padding: 12px 15px 12px 35px;
+                margin-bottom: 15px;
+            }
+
+            .main-content {
+                padding: 30px 15px;
+            }
+        }
+        
+        @media only screen and (max-width: 480px) {
+            .rules-title {
+                font-size: 1.3rem;
+            }
+            
+            .rules-list {
+                font-size: 0.75rem;
+            }
+            
+            .rules-list li {
+                padding: 10px 12px 10px 30px;
+                margin-bottom: 12px;
+            }
+
+            .rules-container {
+                padding: 25px 15px;
+            }
+            
+            .step-number {
+                width: 25px;
+                height: 25px;
+                font-size: 0.7rem;
+                left: -12px;
             }
         }
     </style>
 </head>
 <body>
-    <!-- Back Button -->
-    <button class="back-btn" onclick="window.history.back()">←</button>
-    
+    <!-- Cloud background from dashboard -->
     <div class="sky">
         <div class="cloud"></div>
         <div class="cloud"></div>
@@ -288,16 +400,87 @@
         <div class="cloud"></div>
     </div>
     
-    <!-- Rules Container -->
-    <div class="rules-container">
-        <h2 class="rules-title">How To Play?</h2>
-        <ul class="rules-list">
-            <li>1. Masukkan Nama dan pilih warna motor yang akan di gunakan.</li>
-            <li>2. Klik tombol start</li>
-            <li>3. Baca soal dan pilih jawaban yang tepat</li>
-        </ul>
+    <!-- Back Button -->
+    <button class="back-btn" onclick="goBack()">
+        ← BACK
+    </button>
+    
+    <div class="main-content">
+        <!-- Rules Container -->
+        <div class="rules-container">
+            <h2 class="rules-title">HOW TO PLAY</h2>
+            <ul class="rules-list">
+                <li>
+                    <div class="step-number">1</div>
+                    Enter your name and select the motorcycle for the race
+                </li>
+                <li>
+                    <div class="step-number">2</div>
+                    Click the start button to begin the racing game
+                </li>
+                <li>
+                    <div class="step-number">3</div>
+                    Wait for other players to enter the game and get ready
+                </li>
+                <li>
+                    <div class="step-number">4</div>
+                    Read the questions carefully and choose the correct answer to speed up your motorcycle
+                </li>
+                <li>
+                    <div class="step-number">5</div>
+                    do it quickly to get lots of time points
+                </li>
+                <li>
+                    <div class="step-number">6</div>
+                    Complete all questions to reach the finish line and win!
+                </li>
+            </ul>
+        </div>
     </div>
     
-    <div class="footer"></div>
+    <!-- Moving lights from dashboard -->
+    <div class="moving-lights"></div>
+    
+    <script>
+        function goBack() {
+            // Efek klik
+            const btn = document.querySelector('.back-btn');
+            btn.style.transform = 'translateY(8px) scale(0.95)';
+            
+            setTimeout(() => {
+                btn.style.transform = '';
+                // Kembali ke halaman sebelumnya atau dashboard
+                if (document.referrer) {
+                    window.history.back();
+                } else {
+                    window.location.href = 'dashboard.html';
+                }
+            }, 150);
+        }
+        
+        // Smooth scroll behavior
+        document.documentElement.style.scrollBehavior = 'smooth';
+        
+        // Add entrance animation delay
+        window.addEventListener('load', function() {
+            const listItems = document.querySelectorAll('.rules-list li');
+            listItems.forEach((item, index) => {
+                setTimeout(() => {
+                    item.style.animationPlayState = 'running';
+                }, index * 100);
+            });
+            
+            // Cloud parallax effect
+            window.addEventListener('scroll', function() {
+                const clouds = document.querySelectorAll('.cloud');
+                const scrolled = window.pageYOffset;
+                
+                clouds.forEach((cloud, index) => {
+                    const speed = 0.5 + (index * 0.1);
+                    cloud.style.transform = `translateY(${scrolled * speed}px)`;
+                });
+            });
+        });
+    </script>
 </body>
 </html>
