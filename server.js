@@ -53,6 +53,7 @@ function shuffleQuestion(question) {
 // Game State
 const gameState = {
   players: {},
+  connectedSockets: {}, // Track semua socket yang terhubung tapi belum join
   questions: [
     {
       id: 1,
@@ -303,13 +304,34 @@ function calculateFinishBonus(position) {
 }
 
 function updateLobby() {
+  const totalConnected = Object.keys(gameState.connectedSockets).length;
   const totalPlayers = Object.keys(gameState.players).length;
-  io.emit('lobbyUpdate', {
-    players: Object.values(gameState.players),
+  
+  const baseLobbyData = {
+    players: Object.values(gameState.players), 
     readyCount: readyPlayers.size,
     totalPlayers: totalPlayers,
+    totalConnected: totalConnected,
     maxPlayers: MAX_PLAYERS,
-    isRunning: gameState.isRunning
+    isRunning: gameState.isRunning,
+    canStartGame: totalPlayers >= MIN_PLAYERS && readyPlayers.size === totalPlayers && totalPlayers > 0
+  };
+
+  // Kirim ke semua socket dengan informasi berbeda
+  Object.keys(gameState.connectedSockets).forEach(socketId => {
+    const isPlayer = gameState.players[socketId] ? true : false;
+    
+    io.to(socketId).emit('lobbyUpdate', {
+      ...baseLobbyData,
+      isCurrentSocketPlayer: isPlayer,
+      currentPlayerData: isPlayer ? gameState.players[socketId] : null
+    });
+  });
+}
+
+function emitToPlayers(eventName, data) {
+  Object.keys(gameState.players).forEach(playerId => {
+    io.to(playerId).emit(eventName, data);
   });
 }
 
@@ -328,7 +350,7 @@ function updateLeaderboard() {
   const sortedPlayers = playersWithScores.sort((a, b) => b.score - a.score);
   const topPlayers = sortedPlayers.slice(0, 3);
   
-  io.emit('gameUpdate', { 
+  emitToPlayers('gameUpdate', { 
     topPlayers: topPlayers,
     finishedPlayers: sortedPlayers.filter(p => p.isFinished),
     gameFinished: false
@@ -337,29 +359,58 @@ function updateLeaderboard() {
 
 function checkStartConditions() {
   const totalPlayers = Object.keys(gameState.players).length;
-  if (totalPlayers >= MIN_PLAYERS && readyPlayers.size === totalPlayers && totalPlayers > 0) {
+  
+  // Game hanya bisa dimulai jika:
+  // 1. Ada minimal MIN_PLAYERS yang sudah terdaftar sebagai player (bukan hanya socket connect)
+  // 2. Semua player yang terdaftar sudah ready
+  // 3. Ada setidaknya 1 player yang terdaftar
+  if (totalPlayers >= MIN_PLAYERS && 
+      readyPlayers.size === totalPlayers && 
+      totalPlayers > 0) {
+    console.log(`Starting game with ${totalPlayers} registered players`);
     startGame();
+  } else {
+    console.log(`Cannot start game: ${totalPlayers} players, ${readyPlayers.size} ready`);
   }
 }
 
 function startGame() {
+  const totalPlayers = Object.keys(gameState.players).length;
+  
+  if (totalPlayers === 0) {
+    console.log("Cannot start game: No registered players");
+    return;
+  }
+  
   gameState.isRunning = true;
   gameState.finishOrder = [];
   
-  io.emit('countdownStart');
+  console.log(`Game started with ${totalPlayers} players`);
+  
+  // Kirim countdownStart hanya ke pemain yang terdaftar
+  Object.keys(gameState.players).forEach(playerId => {
+    io.to(playerId).emit('countdownStart');
+  });
   
   let count = COUNTDOWN_TIME;
   const countdownInterval = setInterval(() => {
-    io.emit('countdownTick', count);
+    // Kirim countdown tick hanya ke pemain yang terdaftar
+    Object.keys(gameState.players).forEach(playerId => {
+      io.to(playerId).emit('countdownTick', count);
+    });
     
     if (count <= 0) {
       clearInterval(countdownInterval);
       
       Object.keys(gameState.players).forEach(playerId => {
         initPlayerProgress(playerId);
+        console.log(`Initialized progress for player: ${gameState.players[playerId].name}`);
       });
       
-      io.emit('gameActuallyStarted');
+      // Kirim gameActuallyStarted hanya ke pemain yang terdaftar
+      Object.keys(gameState.players).forEach(playerId => {
+        io.to(playerId).emit('gameActuallyStarted');
+      });
       
       Object.keys(gameState.players).forEach(playerId => {
         sendQuestionToPlayer(playerId);
@@ -398,20 +449,22 @@ function endGame() {
       name: gameState.players[playerId].name,
       motor: gameState.players[playerId].motor,
       score: progress.score,
+      correct: progress.correctAnswers, // Tambahkan ini
+      wrong: gameState.questions.length - progress.correctAnswers, // Tambahkan ini
       finishPosition: progress.finishPosition
     };
   });
-
+  
   const sortedPlayers = playersWithScores.sort((a, b) => b.score - a.score);
   const winner = sortedPlayers[0];
 
-  io.emit('gameUpdate', {
+  emitToPlayers('gameUpdate', {
     topPlayers: sortedPlayers.slice(0, 3),
     finishedPlayers: sortedPlayers,
     gameFinished: true
   });
 
-  io.emit('gameOver', {
+  emitToPlayers('gameOver', {
     winner: winner,
     scores: sortedPlayers
   });
@@ -419,7 +472,17 @@ function endGame() {
 
 // Socket.io Connection Handling
 io.on('connection', (socket) => {
-  console.log(`Player connected: ${socket.id}`);
+  console.log(`Socket connected: ${socket.id}`);
+  
+  // Track socket yang terhubung tapi belum join sebagai player
+  gameState.connectedSockets[socket.id] = {
+    id: socket.id,
+    connectedAt: Date.now(),
+    isPlayer: false
+  };
+  
+  // Update lobby untuk menampilkan total koneksi
+  updateLobby();
 
   // Deteksi koneksi aktif dengan ping-pong
   socket.interval = setInterval(() => {
@@ -430,39 +493,61 @@ io.on('connection', (socket) => {
     // Koneksi masih aktif
   });
 
-  socket.on('join', (playerData, callback) => {
-    if (gameState.isRunning) {
-      return callback({ success: false, message: "Game sudah berjalan!" });
-    }
+socket.on('join', (playerData, callback) => {
+  if (gameState.isRunning) {
+    return callback({ success: false, message: "Game sudah berjalan!" });
+  }
 
-    const totalPlayers = Object.keys(gameState.players).length;
-    if (totalPlayers >= MAX_PLAYERS) {
-      return callback({ success: false, message: `Maksimal ${MAX_PLAYERS} pemain!` });
-    }
+  const totalPlayers = Object.keys(gameState.players).length;
+  if (totalPlayers >= MAX_PLAYERS) {
+    return callback({ success: false, message: `Maksimal ${MAX_PLAYERS} pemain!` });
+  }
 
-    gameState.players[socket.id] = {
-      id: socket.id,
-      name: playerData.name,
-      motor: playerData.motor || 'motor2',
-      isReady: false
-    };
+  if (!playerData.name || !playerData.motor) {
+    return callback({ success: false, message: "Nama dan motor harus dipilih!" });
+  }
 
-    callback({ success: true });
-    updateLobby();
-  });
+  // Pastikan socket sudah terhubung sebelum bisa menjadi player
+  if (!gameState.connectedSockets[socket.id]) {
+    return callback({ success: false, message: "Koneksi tidak valid!" });
+  }
+
+  // Pindahkan dari connectedSockets ke players
+  gameState.connectedSockets[socket.id].isPlayer = true;
+
+  gameState.players[socket.id] = {
+    id: socket.id,
+    name: playerData.name,
+    motor: playerData.motor || 'motor2',
+    isReady: false,
+    connectedAt: gameState.connectedSockets[socket.id]?.connectedAt || Date.now()
+  };
+
+  console.log(`Player joined: ${playerData.name} (${socket.id}) - Motor: ${playerData.motor}`);
+  console.log(`Total players registered: ${Object.keys(gameState.players).length}`);
+  
+  callback({ success: true });
+  updateLobby();
+});
 
   socket.on('setReady', (isReady) => {
     const player = gameState.players[socket.id];
-    if (!player) return;
+    if (!player) {
+      console.log(`Socket ${socket.id} tried to set ready but is not a registered player`);
+      return;
+    }
 
     player.isReady = isReady;
     
     if (isReady) {
       readyPlayers.add(socket.id);
+      console.log(`Player ${player.name} is ready`);
     } else {
       readyPlayers.delete(socket.id);
+      console.log(`Player ${player.name} is not ready`);
     }
 
+    console.log(`Ready players: ${readyPlayers.size}/${Object.keys(gameState.players).length}`);
     updateLobby();
     checkStartConditions();
   });
@@ -517,13 +602,16 @@ io.on('connection', (socket) => {
   });
 
   socket.on('disconnect', () => {
-    console.log(`Player disconnected: ${socket.id}`);
+    console.log(`Socket disconnected: ${socket.id}`);
     clearInterval(socket.interval); // Hentikan ping
 
     const wasInGame = gameState.players[socket.id] && gameState.isRunning;
     const hadFinished = gameState.playerProgress[socket.id]?.isFinished;
 
-    // Hapus data pemain
+    // Hapus dari connectedSockets
+    delete gameState.connectedSockets[socket.id];
+
+    // Hapus data pemain jika ada
     delete gameState.players[socket.id];
     delete gameState.playerProgress[socket.id];
     delete gameState.playerQuestions[socket.id];
@@ -554,10 +642,30 @@ io.on('connection', (socket) => {
   });
 });
 
+// Endpoint untuk melihat status koneksi
+app.get('/status', (req, res) => {
+  const connectedSockets = Object.keys(gameState.connectedSockets).length;
+  const connectedPlayers = Object.keys(gameState.players).length;
+  const readyPlayers = Array.from(readyPlayers).length;
+  
+  res.json({
+    totalConnected: connectedSockets,
+    totalPlayers: connectedPlayers,
+    readyPlayers: readyPlayers,
+    isGameRunning: gameState.isRunning,
+    players: Object.values(gameState.players).map(p => ({
+      name: p.name,
+      motor: p.motor,
+      isReady: p.isReady
+    }))
+  });
+});
+
 // Endpoint untuk reset manual (opsional)
 app.get('/force-reset', (req, res) => {
   gameState.isRunning = false;
   gameState.players = {};
+  gameState.connectedSockets = {};
   gameState.finishOrder = [];
   res.send("Game direset paksa!");
 });

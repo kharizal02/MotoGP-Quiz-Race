@@ -7,7 +7,6 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="/socket.io/socket.io.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
     @keyframes pulse {
       0%, 100% { transform: scale(1); }
@@ -827,7 +826,7 @@
         isReady = false;
         socket.emit('setReady', false);
         readyBtn.classList.remove('bg-green-700', 'ready-badge');
-        readyBtn.textContent = 'Siap Balap';
+        readyBtn.textContent = 'Ready';
         notReadyBtn.classList.remove('bg-gray-600');
         notReadyBtn.classList.add('bg-gray-700');
       }
@@ -839,9 +838,25 @@
       lobbyEl.classList.remove('hidden');
       readySection.classList.remove('hidden');
       joinBtn.style.display = 'none';
+      
+      // Reset ready status
       isReady = false;
       readyBtn.classList.remove('bg-green-700', 'ready-badge');
-      readyBtn.textContent = 'Siap Balap';
+      readyBtn.textContent = 'Ready to Race'; // Ubah kembali ke teks asli
+      
+      // Reset not ready button styling
+      notReadyBtn.classList.remove('bg-gray-600');
+      notReadyBtn.classList.add('bg-gray-700');
+      notReadyBtn.textContent = 'Not Ready';
+      
+      // Kirim event ke server untuk reset ready status
+      socket.emit('setReady', false);
+      
+      // Re-enable motor selection
+      document.querySelectorAll('.motor-option').forEach(opt => {
+        opt.style.pointerEvents = 'auto';
+        opt.style.opacity = '1';
+      });
     });
 
     // Socket Events
@@ -859,7 +874,7 @@
             <span class="text-white">${player.name}</span>
           </div>
           <span class="text-sm ${player.isReady ? 'text-green-400' : 'text-gray-400'}">
-            ${player.isReady ? 'Siap ✓' : 'Waiting......'}
+            ${player.isReady ? 'Ready ✓' : 'Waiting......'}
           </span>
         </div>
       `).join('');
@@ -979,8 +994,8 @@
     });
 
     socket.on('gameOver', (data) => {
+      window.gameOverData = data;
       showWaitingRoom(null);
-      
       console.log('Game over:', data);
       
       gameScreenEl.classList.add('hidden');
@@ -1169,53 +1184,76 @@ function showWaitingRoom(finishedPlayers) {
   }
 }
     // PDF Generation
-    function generatePDF() {
-      const { jsPDF } = window.jspdf;
+  function generatePDF() {
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF();
+    
+    // Header
+    pdf.setFontSize(20);
+    pdf.setFont(undefined, 'bold');
+    pdf.text('CT Racing - Hasil Lomba', 105, 20, { align: 'center' });
+    
+    // Tanggal
+    pdf.setFontSize(10);
+    pdf.setFont(undefined, 'normal');
+    const currentDate = new Date().toLocaleDateString('id-ID');
+    pdf.text(`Tanggal: ${currentDate}`, 20, 35);
+    
+    // Ambil data dari finalScores
+    const scoresData = getCurrentScoresData();
+    
+    // Header tabel
+    pdf.setFontSize(12);
+    pdf.setFont(undefined, 'bold');
+    pdf.text('Pos', 20, 50);
+    pdf.text('Nama Pemain', 40, 50);
+    pdf.text('Skor', 120, 50);
+    pdf.text('Benar', 145, 50);
+    pdf.text('Salah', 170, 50);
+    
+    // Garis header
+    pdf.line(15, 52, 195, 52);
+    
+    // Data tabel
+    pdf.setFont(undefined, 'normal');
+    let yPosition = 62;
+    
+    scoresData.forEach((player, index) => {
+      pdf.text(`${index + 1}`, 20, yPosition);
+      const name = player.name.length > 15 ? player.name.substring(0, 15) + '...' : player.name;
+      pdf.text(name, 40, yPosition);
+      pdf.text(`${player.score}`, 120, yPosition);
+      pdf.text(`${player.correct || 0}`, 145, yPosition);
+      pdf.text(`${player.wrong || 0}`, 170, yPosition);
       
-      const tempDiv = document.createElement('div');
-      tempDiv.style.position = 'absolute';
-      tempDiv.style.left = '-9999px';
-      tempDiv.style.backgroundColor = '#1F2937';
-      tempDiv.style.padding = '20px';
-      tempDiv.style.borderRadius = '12px';
-      tempDiv.style.width = '400px';
-      
-      const leaderboardContent = document.getElementById('finalScores').cloneNode(true);
-      const winnerContent = document.getElementById('winnerAnnouncement').cloneNode(true);
-      
-      const title = document.createElement('h1');
-      title.textContent = 'Hasil Race';
-      title.style.color = '#FFFFFF';
-      title.style.fontSize = '24px';
-      title.style.fontWeight = 'bold';
-      title.style.marginBottom = '20px';
-      title.style.textAlign = 'center';
-      
-      tempDiv.appendChild(title);
-      tempDiv.appendChild(winnerContent);
-      tempDiv.appendChild(leaderboardContent);
-      
-      document.body.appendChild(tempDiv);
-      
-      html2canvas(tempDiv).then(canvas => {
-        const imgData = canvas.toDataURL('image/png');
-        const pdf = new jsPDF({
-          orientation: 'portrait',
-          unit: 'mm'
-        });
-        
-        const imgProps = pdf.getImageProperties(imgData);
-        const pdfWidth = pdf.internal.pageSize.getWidth();
-        const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
-        
-        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-        pdf.save('hasil.pdf');
-        
-        document.body.removeChild(tempDiv);
-      });
+      yPosition += 10;
+    });
+    
+    // Garis penutup
+    pdf.line(15, yPosition + 2, 195, yPosition + 2);
+    
+    // Winner highlight
+    if (scoresData.length > 0) {
+      pdf.setFontSize(14);
+      pdf.setFont(undefined, 'bold');
+      pdf.text(`Pemenang: ${scoresData[0].name}`, 105, yPosition + 15, { align: 'center' });
     }
+    
+    pdf.save(`CT_Racing_Results_${currentDate.replace(/\//g, '-')}.pdf`);
+  }
 
     document.getElementById('downloadPdfBtn').addEventListener('click', generatePDF);
-  </script>
+
+  function getCurrentScoresData() {
+    if (!window.gameOverData || !window.gameOverData.scores) return [];
+    
+    return window.gameOverData.scores.map(player => ({
+      name: player.name || 'Unknown',
+      score: player.score || 0,
+      correct: player.correct || 0,
+      wrong: player.wrong || 0
+    }));
+  }  
+</script>
 </body>
 </html>
