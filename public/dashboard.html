@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CT Racing</title>
+    <style>
+        
+        body {
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            background: linear-gradient(180deg, 
+                #1a1a2e 0%, 
+                #16213e 100%);
+            overflow-x: hidden;
+            position: relative;
+            font-family: 'Press Start 2P', cursive;
+            text-align: center;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            overflow: hidden;
+            position: relative; /* Tambahkan ini */
+        }
+        
+        .sky {
+            position: relative;
+            height: 150px;
+            width: 100%;
+        }
+        
+        .cloud {
+            position: absolute;
+            background-image: url('assets/awan.png');
+            background-repeat: no-repeat;
+            background-size: contain;
+            opacity: 0.9;
+            animation: cloudMove linear infinite;
+            filter: drop-shadow(0 0 5px rgba(255,255,255,0.5));
+        }
+
+        /* Variasi ukuran dan posisi awan */
+        .cloud:nth-child(1) {
+            width: 80px;
+            height: 48px;
+            top: 20px;
+            left: 5%;
+            animation-duration: 120s;
+            animation-delay: -30s;
+        }
+        .cloud:nth-child(2) {
+            width: 120px;
+            height: 72px;
+            top: 40px;
+            left: 20%;
+            animation-duration: 150s;
+            transform: scale(0.8);
+        }
+        .cloud:nth-child(3) {
+            width: 150px;
+            height: 90px;
+            top: 10px;
+            left: 35%;
+            animation-duration: 180s;
+            animation-delay: -60s;
+        }
+        .cloud:nth-child(4) {
+            width: 60px;
+            height: 36px;
+            top: 50px;
+            left: 50%;
+            animation-duration: 100s;
+        }
+        .cloud:nth-child(5) {
+            width: 200px;
+            height: 120px;
+            top: 30px;
+            left: 65%;
+            animation-duration: 200s;
+            animation-delay: -90s;
+        }
+        .cloud:nth-child(6) {
+            width: 90px;
+            height: 54px;
+            top: 10px;
+            left: 80%;
+            animation-duration: 140s;
+        }
+        .cloud:nth-child(7) {
+            width: 180px;
+            height: 108px;
+            top: 60px;
+            left: 10%;
+            animation-duration: 220s;
+            animation-delay: -45s;
+        }
+        .cloud:nth-child(8) {
+            width: 70px;
+            height: 42px;
+            top: 25px;
+            left: 75%;
+            animation-duration: 110s;
+        }
+        
+        @keyframes cloudMove {
+            from { transform: translateX(-100px); }
+            to { transform: translateX(calc(100vw + 100px)); }
+        }
+        
+        .header {
+            padding: 30px 0 50px 0;
+            position: relative;
+            z-index: 10; /* Naikkan z-index */
+        }
+    
+        h1 {
+            font-size: 4rem;
+            color: white;
+            text-shadow: 
+                /* Lapisan outline merah yang tebal */
+                0 0 4px red,
+                0 0 8px red,
+                0 0 12px red,
+                0 0 16px red,
+                0 0 20px red,
+                
+                /* Outline solid merah di semua sisi */
+                4px 0 0 red,
+                -4px 0 0 red,
+                0 4px 0 red,
+                0 -4px 0 red,
+                
+                /* Bayangan hitam untuk efek tambahan */
+                6px 6px 0 black;
+            margin-bottom: 10px;
+            letter-spacing: 2px;
+        }
+
+        .buttons {
+            margin: 40px 0;
+            position: relative;
+            z-index: 20; /* Naikkan z-index */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 30px;
+        }
+
+        .btn {
+            background-color: #e74c3c;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 1.5rem;
+            cursor: pointer;
+            font-family: 'Press Start 2P', cursive;
+            border-radius: 10px;
+            box-shadow: 5px 5px 0 #000;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+
+        .btn:hover {
+            transform: translate(2px, 2px);
+            box-shadow: 3px 3px 0 #000;
+        }
+
+        .footer {
+            position: fixed; /* Ubah ke absolute */
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 100%;
+            width: 100%;
+            background-image: url('assets/4.png');
+            background-repeat: no-repeat;
+            background-size: cover;
+            background-position: center;
+            z-index: 1; /* Lebih rendah dari konten utama */
+        }
+
+          /* Media query untuk perangkat mobile */
+        @media only screen and (max-width: 768px) {
+            .footer {
+                height: 20%; /* 40% dari viewport height di mobile */
+            }
+            
+            h1 {
+                font-size: 2.5rem; /* Ukuran font lebih kecil di mobile */
+            }
+            
+            .btn {
+                padding: 12px 24px;
+                font-size: 1.2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="sky">
+        <div class="cloud"></div>
+        <div class="cloud"></div>
+        <div class="cloud"></div>
+        <div class="cloud"></div>
+        <div class="cloud"></div>
+        <div class="cloud"></div>
+        <div class="cloud"></div>
+        <div class="cloud"></div>
+    </div>
+    
+    <div class="header">
+        <h1>CT RACING</h1>
+    </div>
+    
+    <div class="buttons">
+        <button class="btn" id="startBtn">START GAMES</button>
+        <button class="btn" id="howToPlayBtn">HOW TO PLAY</button>
+    </div>
+    
+    <div class="road-container">
+        <div class="road"></div>
+    </div>
+    
+    <div class="footer"></div>
+    
+    <script>
+        document.getElementById('startBtn').addEventListener('click', function() {
+            window.location.href = 'game.html';
+            // Tambahkan logika mulai game di sini
+        });
+        
+        document.getElementById('howToPlayBtn').addEventListener('click', function() {
+            // Pindah ke halaman aturan.html
+            window.location.href = 'aturan.html';
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,1207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CT Racing</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+    }
+    .animate-pulse { animation: pulse 1.5s infinite; }
+    .motor-option {
+      width: 60px;
+      height: 60px;
+      border-radius: 12px;
+      cursor: pointer;
+      border: 3px solid transparent;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, 
+        #72ddf7 0%, 
+        #8093f1 100%);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .motor-option::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(135deg, 
+        rgba(255, 255, 255, 0.2) 0%, 
+        transparent 100%);
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .motor-option:hover {
+      transform: scale(1.1);
+      background: linear-gradient(135deg, 
+        #ff9a8b 0%, 
+        #ff6b95 100%);
+      box-shadow: 0 8px 25px rgba(255, 107, 149, 0.4);
+    }
+
+    .motor-option:hover::before {
+      opacity: 1;
+    }
+
+    .motor-option.selected {
+      border-color: #ffd166;
+      box-shadow: 0 0 25px rgba(255, 209, 102, 0.8);
+      transform: scale(1.15);
+      background: linear-gradient(135deg, 
+        #ff6b95 0%, 
+        #ffd166 100%);
+    }    
+    .ready-badge {
+      animation: pulse 2s infinite;
+    }
+    #countdownScreen {
+      z-index: 1000;
+    }
+    .countdown-text {
+      text-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
+    }
+    @media print {
+      body * {
+        visibility: hidden;
+      }
+      #finalScores, #finalScores * {
+        visibility: visible;
+      }
+      #finalScores {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+      }
+    }
+    /* New track styles */
+    .race-tracks {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    
+    .track-container {
+      position: relative;
+      height: 60px;
+      background-image: url('assets/jalan.png');
+      background-repeat: repeat-x;
+      background-size: auto 100%;
+      border-left: 4px solid #ff6b6b;
+      border-right: 4px solid #4ecdc4;
+      border-radius: 10px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+      animation: roadMove 5s linear infinite;
+    }
+    .track-finish {
+      position: absolute;
+      right: 0;
+      top: 0;
+      height: 100%;
+      width: 20px;
+      background: linear-gradient(90deg, 
+        transparent 0%, 
+        rgba(255, 235, 59, 0.8) 50%,
+        rgba(255, 193, 7, 0.9) 100%);
+      border-radius: 0 10px 10px 0;
+    }
+    .player-bike {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      transition: left 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+      will-change: left;
+    }
+    .motor-image {
+      width: 60px;
+      height: auto;
+      filter: drop-shadow(0 0 5px rgba(0,0,0,0.5));
+      transition: transform 0.3s ease;
+    }
+    .motor-image:hover {
+      transform: scale(1.1);
+    }
+    .player-name {
+      position: absolute;
+      bottom: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 12px;
+      font-weight: bold;
+      color: white;
+      background-color: rgba(0,0,0,0.7);
+      padding: 2px 5px;
+      border-radius: 3px;
+      white-space: nowrap;
+    }
+    
+    body {
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+      background: linear-gradient(180deg, 
+        #1a1a2e 0%, 
+        #16213e 100%);
+      overflow-x: hidden;
+      position: relative;
+    }
+    .container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 2rem;
+      z-index: 2; 
+    }
+    
+    .road-container {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 120px;
+      background-image: url('assets/jalan.png');
+      background-repeat: repeat-x;
+      background-size: auto 100%;
+      z-index: 0;
+      animation: roadMove 5s linear infinite;
+    }
+    
+    @keyframes roadMove {
+      0% { background-position: 0 0; }
+      100% { background-position: -1000px 0; }
+    }
+    
+    .moving-bikes {
+      position: fixed;
+      bottom: 60px;
+      left: 0;
+      width: 100%;
+      height: 60px;
+      z-index: 2;
+    }
+    
+    .moving-bike {
+      position: absolute;
+      width: 60px;
+      height: 60px;
+      bottom: 0;
+      animation: bikeMove linear infinite;
+    }
+    
+    @keyframes bikeMove {
+      0% { transform: translateX(-100px); }
+      100% { transform: translateX(calc(100vw + 100px)); }
+    }
+    
+    /* New color palette */
+    .bg-gray-800 {
+      background: linear-gradient(135deg, 
+        #0f2027 0%, 
+        #203a43 50%, 
+        #2c5364 100%);
+      border: 2px solid rgba(255, 255, 255, 0.2);
+      box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+      backdrop-filter: blur(4px);
+    }
+    .bg-gray-700 {
+      background: linear-gradient(135deg, 
+        #1e3c72 0%, 
+        #2a5298 100%);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+    }
+
+    .bg-gray-600 {
+      background: linear-gradient(135deg, 
+        #ff758c 0%, 
+        #ff7eb3 100%);
+    }    
+    .bg-red-600 {
+      background: linear-gradient(135deg, 
+        #ff416c 0%, 
+        #ff4b2b 100%);
+      border: none;
+      box-shadow: 0 4px 15px 0 rgba(255, 75, 43, 0.75);
+    }
+
+    .bg-red-600:hover, .bg-red-700:hover {
+      background: linear-gradient(135deg, 
+        #e53935 0%, 
+        #e35d5b 100%);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px 0 rgba(227, 93, 91, 0.9);
+    }
+
+    .bg-green-600 {
+      background: linear-gradient(135deg, 
+        #0cebeb 0%, 
+        #20e3b2 50%, 
+        #29ffc6 100%);
+      box-shadow: 0 4px 15px 0 rgba(32, 227, 178, 0.75);
+    }
+
+    .bg-green-600:hover, .bg-green-700:hover {
+      background: linear-gradient(135deg, 
+        #00c9ff 0%, 
+        #92fe9d 100%);
+      transform: translateY(-2px);
+    }
+
+    .bg-blue-600 {
+      background: linear-gradient(135deg, 
+        #4b6cb7 0%, 
+        #182848 100%);
+      box-shadow: 0 4px 15px 0 rgba(75, 108, 183, 0.75);
+    }
+
+    .bg-blue-600:hover, .bg-blue-700:hover {
+      background: linear-gradient(135deg, 
+        #3a7bd5 0%, 
+        #00d2ff 100%);
+      transform: translateY(-2px);
+    }    
+    .text-white {
+      color: #ffffff;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    }
+
+    .text-gray-300 {
+      color: #f1f5f9;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+    }
+
+    .text-gray-400 {
+      color: #e2e8f0;
+    }
+
+    /* Special colors for scores */
+    .text-yellow-400 {
+      color: #ffd700;
+      text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+      font-weight: bold;
+    }
+    .border-gray-600 {
+      border-color: #6B7280;
+    }
+    .sky {
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 150px;
+      width: 100%;
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    .cloud {
+      position: absolute;
+      background-image: url('assets/awan.png');
+      background-repeat: no-repeat;
+      background-size: contain;
+      opacity: 0.9;
+      animation: cloudMove linear infinite;
+      filter: drop-shadow(0 0 5px rgba(255,255,255,0.5));
+    }
+
+    /* Cloud variations */
+    .cloud:nth-child(1) {
+      width: 80px;
+      height: 48px;
+      top: 20px;
+      left: 5%;
+      animation-duration: 120s;
+      animation-delay: -30s;
+    }
+    .cloud:nth-child(2) {
+      width: 120px;
+      height: 72px;
+      top: 40px;
+      left: 20%;
+      animation-duration: 150s;
+      transform: scale(0.8);
+    }
+    .cloud:nth-child(3) {
+      width: 150px;
+      height: 90px;
+      top: 10px;
+      left: 35%;
+      animation-duration: 180s;
+      animation-delay: -60s;
+    }
+    .cloud:nth-child(4) {
+      width: 60px;
+      height: 36px;
+      top: 50px;
+      left: 50%;
+      animation-duration: 100s;
+    }
+    .cloud:nth-child(5) {
+      width: 200px;
+      height: 120px;
+      top: 30px;
+      left: 65%;
+      animation-duration: 200s;
+      animation-delay: -90s;
+    }
+    .cloud:nth-child(6) {
+      width: 90px;
+      height: 54px;
+      top: 10px;
+      left: 80%;
+      animation-duration: 140s;
+    }
+    .cloud:nth-child(7) {
+      width: 180px;
+      height: 108px;
+      top: 60px;
+      left: 10%;
+      animation-duration: 220s;
+      animation-delay: -45s;
+    }
+    .cloud:nth-child(8) {
+      width: 70px;
+      height: 42px;
+      top: 25px;
+      left: 75%;
+      animation-duration: 110s;
+    }
+
+    @keyframes cloudMove {
+      from { transform: translateX(-100px); }
+      to { transform: translateX(calc(100vw + 100px)); }
+    }
+
+    #timerBar {
+      background: linear-gradient(90deg, 
+        #ff00cc 0%, 
+        #3333ff 50%, 
+        #00ccff 100%);
+      height: 2.5px;
+      border-radius: 9999px;
+      transition: all 0.3s ease;
+      box-shadow: 0 0 10px rgba(255, 0, 204, 0.6);
+    }
+
+    .bg-yellow-500 {
+      background: linear-gradient(90deg, 
+        #fdcb6e 0%, 
+        #e17055 100%) !important;
+      box-shadow: 0 0 15px rgba(253, 203, 110, 0.8) !important;
+    }
+
+    input[type="text"] {
+      background: linear-gradient(135deg, 
+        rgba(255, 255, 255, 0.1) 0%, 
+        rgba(255, 255, 255, 0.05) 100%);
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      backdrop-filter: blur(10px);
+      color: white;
+      border-radius: 12px;
+      transition: all 0.3s ease;
+    }
+
+    input[type="text"]:focus {
+      border-color: #ffd166;
+      box-shadow: 0 0 20px rgba(255, 209, 102, 0.5);
+      background: linear-gradient(135deg, 
+        rgba(255, 255, 255, 0.15) 0%, 
+        rgba(255, 255, 255, 0.1) 100%);
+    }
+
+    /* New additions for better contrast */
+    .bg-red-500 {
+      background: linear-gradient(135deg, 
+        #ff4d4d 0%, 
+        #ff1a1a 100%);
+    }
+
+    .bg-green-500 {
+      background: linear-gradient(135deg, 
+        #00b09b 0%, 
+        #96c93d 100%);
+    }
+
+    .bg-blue-500 {
+      background: linear-gradient(135deg, 
+        #0575e6 0%, 
+        #021b79 100%);
+    }
+
+    .text-red-500 {
+      color: #ff4d4d;
+    }
+
+    .text-green-500 {
+      color: #00b09b;
+    }
+
+    .text-blue-500 {
+      color: #0575e6;
+    }
+
+    /* Animation for leaderboard entries */
+    @keyframes slideIn {
+      from { transform: translateX(-20px); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+
+    #leaderboardList div {
+      animation: slideIn 0.3s ease-out forwards;
+    }
+
+    /* Enhanced button effects */
+    button {
+      transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+      position: relative;
+      overflow: hidden;
+    }
+
+    button:active {
+      transform: translateY(2px);
+    }
+
+    button::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 5px;
+      height: 5px;
+      background: rgba(255, 255, 255, 0.5);
+      opacity: 0;
+      border-radius: 100%;
+      transform: scale(1, 1) translate(-50%);
+      transform-origin: 50% 50%;
+    }
+
+    button:focus:not(:active)::after {
+      animation: ripple 1s ease-out;
+    }
+
+    @keyframes ripple {
+      0% {
+        transform: scale(0, 0);
+        opacity: 0.5;
+      }
+      100% {
+        transform: scale(20, 20);
+        opacity: 0;
+      }
+    }
+    .question-image {
+      max-height: 200px;
+      border-radius: 8px;
+      border: 2px solid rgba(255, 255, 255, 0.1);
+      margin: 0 auto 1rem;
+      display: block;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+        /* Tambahkan di bagian style */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .animate-fadeIn {
+      animation: fadeIn 0.5s ease-out forwards;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .animate-spin {
+      animation: spin 1s linear infinite;
+    }
+    /* Tambahkan di bagian style */
+    #waitingRoom {
+      margin-bottom: 1.5rem;
+      border: 2px solid rgba(255, 215, 0, 0.3);
+    }
+</style>
+</head>
+<body>
+
+  <div class="sky">
+    <div class="cloud"></div>
+    <div class="cloud"></div>
+    <div class="cloud"></div>
+    <div class="cloud"></div>
+    <div class="cloud"></div>
+    <div class="cloud"></div>
+    <div class="cloud"></div>
+    <div class="cloud"></div>
+  </div>
+  <!-- Moving bikes on the road -->
+  <div class="moving-bikes" id="movingBikes"></div>
+  
+  <!-- Road at the bottom -->
+  <div class="road-container"></div>
+  
+  <!-- Main game container -->
+  <div class="container mx-auto px-4 py-8 max-w-4xl w-full">
+    
+    <!-- Lobby Screen -->
+    <div id="lobby" class="bg-gray-800 rounded-xl shadow-2xl overflow-hidden">
+      <div class="bg-red-600 py-4 px-6 text-center">
+        <h1 class="text-3xl font-bold text-white">🏍 CT Racing</h1>
+        <p class="text-red-100">Race dengan menjawab pertanyaan!</p>
+      </div>
+      
+      <div class="p-6">
+        <div class="mb-4">
+          <label class="block text-gray-300 mb-2">Nama Pembalap:</label>
+          <input id="playerName" type="text" placeholder="Masukkan nama kamu" 
+                class="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent text-white">
+        </div>
+        
+        <div class="mb-6">
+          <label class="block text-gray-300 mb-3">Pilih Motor:</label>
+          <div class="flex gap-3 flex-wrap">
+            <div class="motor-option selected" data-motor="motor2" title="Motor 2">
+              <img src="assets/motor2.png" class="w-12 h-12 object-contain">
+            </div>
+            <div class="motor-option" data-motor="motor3" title="Motor 3">
+              <img src="assets/motor3.png" class="w-12 h-12 object-contain">
+            </div>
+            <div class="motor-option" data-motor="motor4" title="Motor 4">
+              <img src="assets/motor4.png" class="w-12 h-12 object-contain">
+            </div>
+            <div class="motor-option" data-motor="motor5" title="Motor 5">
+              <img src="assets/motor5.png" class="w-12 h-12 object-contain">
+            </div>
+            <div class="motor-option" data-motor="motor6" title="Motor 6">
+              <img src="assets/motor6.png" class="w-12 h-12 object-contain">
+            </div>
+            <div class="motor-option" data-motor="motor7" title="Motor 7">
+              <img src="assets/motor7.png" class="w-12 h-12 object-contain">
+            </div>
+            <div class="motor-option" data-motor="motor8" title="Motor 8">
+              <img src="assets/motor8.png" class="w-12 h-12 object-contain">
+            </div>
+            <div class="motor-option" data-motor="motor9" title="Motor 9">
+              <img src="assets/motor9.png" class="w-12 h-12 object-contain">
+            </div>
+          </div>
+        </div>
+        
+        <button id="joinBtn" 
+                class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-lg transition-all transform hover:scale-105">
+          Gabung Balapan
+        </button>
+      </div>
+
+      <!-- Lobby Players List -->
+      <div id="lobbyPlayers" class="p-6 pt-0 space-y-2 max-h-60 overflow-y-auto">
+        <!-- Players will appear here -->
+      </div>
+
+      <!-- Ready Section -->
+      <div id="readySection" class="hidden p-6 pt-0">
+        <div class="text-center mb-4">
+          <p class="text-gray-300">Menunggu pemain lain siap...</p>
+          <p id="readyStatus" class="text-sm text-gray-400">
+            Siap: <span id="readyCount">0</span> / <span id="totalPlayers">0</span> pemain
+          </p>
+          <p class="text-xs text-gray-500">Maksimal 50 pemain</p>
+        </div>
+        <div class="flex gap-3">
+          <button id="readyBtn" 
+                  class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg transition-all">
+            Siap Balap
+          </button>
+          <button id="notReadyBtn" 
+                  class="flex-1 bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-4 rounded-lg transition-all">
+            Tidak Siap
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Game Screen -->
+    <div id="gameScreen" class="hidden w-full space-y-6">
+      <!-- Race Track -->
+      <div class="bg-gray-800 rounded-xl p-4">
+        <div class="race-tracks">
+          <div class="track-container" id="track1">
+            <div class="track-finish"></div>
+          </div>
+          <div class="track-container" id="track2">
+            <div class="track-finish"></div>
+          </div>
+          <div class="track-container" id="track3">
+            <div class="track-finish"></div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Question Panel -->
+      <div id="questionPanel" class="bg-gray-800 rounded-xl p-6 shadow-lg">
+        <div class="flex justify-between items-center mb-4">
+          <span id="questionCounter" class="bg-red-600 text-white px-3 py-1 rounded-full text-sm font-bold">Q1/5</span>
+          <div class="w-3/4 bg-gray-700 rounded-full h-2.5">
+            <div id="timerBar" class="bg-red-600 h-2.5 rounded-full transition-all duration-1000" style="width: 100%"></div>
+          </div>
+          <span id="timeLeft" class="text-white font-bold">15s</span>
+        </div>
+        
+        <h2 id="questionText" class="text-xl font-bold text-white mb-4"></h2>
+        
+        <div id="options" class="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <!-- Options will appear here -->
+        </div>
+      </div>
+      
+      <!-- Leaderboard -->
+      <div id="leaderboard" class="bg-gray-800 rounded-xl p-6">
+        <h3 class="text-lg font-bold text-white mb-3">🏆 Leaderboard</h3>
+        <div id="leaderboardList" class="space-y-2">
+          <!-- Leaderboard will appear here -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Countdown Screen -->
+    <div id="countdownScreen" class="hidden fixed inset-0 flex items-center justify-center bg-black bg-opacity-75 z-50">
+      <div class="bg-gray-800 rounded-xl p-8 text-center max-w-md w-full">
+        <h2 class="text-3xl font-bold text-white mb-4">🏁 Bersiap-siap!</h2>
+        <div id="countdownNumber" class="text-8xl font-bold text-green-500 mb-4 animate-pulse countdown-text">10</div>
+        <p class="text-gray-300 text-xl">Balapan dimulai dalam...</p>
+      </div>
+    </div>
+
+    <!-- Game Over Screen -->
+    <div id="gameOverScreen" class="hidden w-full">
+      <div class="bg-gray-800 rounded-xl p-8 text-center">
+        <h2 class="text-3xl font-bold text-white mb-4">🏁 Game Selesai!</h2>
+        <div id="winnerAnnouncement" class="mb-6">
+          <!-- Winner announcement will appear here -->
+        </div>
+        <div id="finalScores" class="mb-6">
+          <!-- Final scores will appear here -->
+        </div>
+        <div class="flex gap-4 justify-center">
+          <button id="playAgainBtn" class="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-lg">
+            Main Lagi
+          </button>
+          <button id="downloadPdfBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg">
+            Download Hasil
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Socket.io Connection
+    const socket = io();
+    let playerId;
+    let currentQuestion;
+    let questionStartTime;
+    let timeLeft;
+    let timerInterval;
+    let selectedMotor = 'motor2';
+    let isReady = false;
+    let hasAnswered = false;
+
+    // DOM Elements
+    const lobbyEl = document.getElementById('lobby');
+    const gameScreenEl = document.getElementById('gameScreen');
+    const gameOverScreenEl = document.getElementById('gameOverScreen');
+    const questionTextEl = document.getElementById('questionText');
+    const optionsEl = document.getElementById('options');
+    const timerBarEl = document.getElementById('timerBar');
+    const timeLeftEl = document.getElementById('timeLeft');
+    const leaderboardListEl = document.getElementById('leaderboardList');
+    const questionCounterEl = document.getElementById('questionCounter');
+    const joinBtn = document.getElementById('joinBtn');
+    const readyBtn = document.getElementById('readyBtn');
+    const notReadyBtn = document.getElementById('notReadyBtn');
+    const readySection = document.getElementById('readySection');
+    const lobbyPlayers = document.getElementById('lobbyPlayers');
+    const readyCount = document.getElementById('readyCount');
+    const totalPlayers = document.getElementById('totalPlayers');
+    const winnerAnnouncement = document.getElementById('winnerAnnouncement');
+    const finalScores = document.getElementById('finalScores');
+    const playAgainBtn = document.getElementById('playAgainBtn');
+    const countdownScreenEl = document.getElementById('countdownScreen');
+    const countdownNumberEl = document.getElementById('countdownNumber');
+    const movingBikesEl = document.getElementById('movingBikes');
+
+    // Create moving bikes on the road
+    function createMovingBikes() {
+      const bikeCount = 8; // Number of bikes to show
+      for (let i = 0; i < bikeCount; i++) {
+        const bike = document.createElement('div');
+        bike.className = 'moving-bike';
+        
+        // Random motor image (2-9)
+        const motorNum = Math.floor(Math.random() * 8) + 2;
+        bike.innerHTML = `<img src="assets/motor${motorNum}.png" class="w-full h-full object-contain">`;
+        
+        // Random animation duration (5-15s)
+        const duration = Math.random() * 10 + 5;
+        bike.style.animationDuration = `${duration}s`;
+        
+        // Random starting position (delayed)
+        bike.style.animationDelay = `${Math.random() * -duration}s`;
+        
+        movingBikesEl.appendChild(bike);
+      }
+    }
+    
+    // Initialize moving bikes
+    createMovingBikes();
+
+    // Motor Selection
+    document.querySelectorAll('.motor-option').forEach(option => {
+      option.addEventListener('click', function() {
+        document.querySelectorAll('.motor-option').forEach(opt => {
+          opt.classList.remove('selected');
+        });
+        this.classList.add('selected');
+        selectedMotor = this.dataset.motor;
+      });
+    });
+
+    // Join Game
+    joinBtn.addEventListener('click', () => {
+      const name = document.getElementById('playerName').value.trim();
+      if (!name) return alert('Masukkan nama pembalap!');
+      
+      joinBtn.textContent = 'Bergabung...';
+      joinBtn.disabled = true;
+      
+      socket.emit('join', { 
+        name: name,
+        motor: selectedMotor
+      }, (response) => {
+        if (response.success) {
+          readySection.classList.remove('hidden');
+          joinBtn.style.display = 'none';
+        } else {
+          alert(response.message);
+          joinBtn.textContent = 'Gabung Balapan';
+          joinBtn.disabled = false;
+        }
+      });
+    });
+
+    // Ready Buttons
+    readyBtn.addEventListener('click', () => {
+      if (!isReady) {
+        isReady = true;
+        socket.emit('setReady', true);
+        readyBtn.classList.add('bg-green-700', 'ready-badge');
+        readyBtn.textContent = 'Siap! ✓';
+        notReadyBtn.classList.remove('bg-gray-700');
+        notReadyBtn.classList.add('bg-gray-600');
+      }
+    });
+
+    notReadyBtn.addEventListener('click', () => {
+      if (isReady) {
+        isReady = false;
+        socket.emit('setReady', false);
+        readyBtn.classList.remove('bg-green-700', 'ready-badge');
+        readyBtn.textContent = 'Siap Balap';
+        notReadyBtn.classList.remove('bg-gray-600');
+        notReadyBtn.classList.add('bg-gray-700');
+      }
+    });
+
+    // Play Again Button
+    playAgainBtn.addEventListener('click', () => {
+      gameOverScreenEl.classList.add('hidden');
+      lobbyEl.classList.remove('hidden');
+      readySection.classList.remove('hidden');
+      joinBtn.style.display = 'none';
+      isReady = false;
+      readyBtn.classList.remove('bg-green-700', 'ready-badge');
+      readyBtn.textContent = 'Siap Balap';
+    });
+
+    // Socket Events
+    socket.on('connect', () => {
+      playerId = socket.id;
+      console.log('Connected with ID:', playerId);
+    });
+
+    socket.on('lobbyUpdate', (data) => {
+      // Update players list
+      lobbyPlayers.innerHTML = data.players.map(player => `
+        <div class="flex items-center justify-between bg-gray-700 p-3 rounded-lg ${player.isReady ? 'border-l-4 border-green-500' : ''}">
+          <div class="flex items-center">
+            <img src="assets/${player.motor}.png" class="w-8 h-8 object-contain mr-3">
+            <span class="text-white">${player.name}</span>
+          </div>
+          <span class="text-sm ${player.isReady ? 'text-green-400' : 'text-gray-400'}">
+            ${player.isReady ? 'Siap ✓' : 'Menunggu...'}
+          </span>
+        </div>
+      `).join('');
+
+      // Update ready counter
+      readyCount.textContent = data.readyCount;
+      totalPlayers.textContent = data.totalPlayers;
+    });
+
+    socket.on('countdownStart', () => {
+      console.log('Countdown started');
+      lobbyEl.classList.add('hidden');
+      gameScreenEl.classList.add('hidden');
+      gameOverScreenEl.classList.add('hidden');
+      countdownScreenEl.classList.remove('hidden');
+    });
+
+    socket.on('countdownTick', (count) => {
+      console.log('Countdown:', count);
+      countdownNumberEl.textContent = count;
+      
+      // Change color based on countdown
+      if (count <= 3) {
+        countdownNumberEl.classList.remove('text-green-500', 'text-yellow-500');
+        countdownNumberEl.classList.add('text-red-500');
+      } else if (count <= 6) {
+        countdownNumberEl.classList.remove('text-green-500', 'text-red-500');
+        countdownNumberEl.classList.add('text-yellow-500');
+      } else {
+        countdownNumberEl.classList.remove('text-yellow-500', 'text-red-500');
+        countdownNumberEl.classList.add('text-green-500');
+      }
+    });
+
+    socket.on('gameActuallyStarted', () => {
+      console.log('Game actually started');
+      countdownScreenEl.classList.add('hidden');
+      gameScreenEl.classList.remove('hidden');
+    });
+
+    socket.on('gameActuallyStarted', () => {
+      console.log('Game actually started');
+      countdownScreenEl.classList.add('hidden');
+      gameScreenEl.classList.remove('hidden');
+      document.querySelector('.road-container').style.display = 'none';
+      document.querySelector('.moving-bikes').style.display = 'none';
+    });
+
+    socket.on('newQuestion', (question) => {
+      console.log('New question:', question);
+      currentQuestion = question;
+      questionStartTime = question.startTime;
+      hasAnswered = false;
+      
+      // Show loading state
+      questionTextEl.textContent = "Memuat soal...";
+      optionsEl.innerHTML = '<div class="text-center py-4"><div class="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-white"></div></div>';
+      
+      // Preload image if exists
+      let imageLoaded = Promise.resolve();
+      if (question.type === 'image' && question.image) {
+        imageLoaded = new Promise((resolve) => {
+          const img = new Image();
+          img.src = question.image;
+          img.onload = resolve;
+          img.onerror = resolve; // Continue even if image fails to load
+        });
+      }
+      
+      // After loading complete, show question
+      imageLoaded.then(() => {
+        // Update UI
+        questionTextEl.textContent = question.text;
+        questionCounterEl.textContent = `Q${question.current}/${question.total}`;
+        
+        // Clear previous options and image
+        optionsEl.innerHTML = '';
+        const existingImage = document.getElementById('questionImage');
+        if (existingImage) existingImage.remove();
+        
+        // Add image if question has one
+        if (question.type === 'image' && question.image) {
+          const imgContainer = document.createElement('div');
+          imgContainer.className = 'mb-4 flex justify-center';
+          const img = document.createElement('img');
+          img.id = 'questionImage';
+          img.src = question.image;
+          img.alt = 'Gambar soal';
+          img.className = 'max-h-48 rounded-lg border-2 border-gray-600 animate-fadeIn';
+          imgContainer.appendChild(img);
+          questionTextEl.after(imgContainer);
+        }
+        
+        // Add new options
+        question.options.forEach((option, index) => {
+          const optionBtn = document.createElement('button');
+          optionBtn.className = 'bg-gray-700 hover:bg-gray-600 text-white p-3 rounded-lg text-left transition-colors animate-fadeIn';
+          optionBtn.textContent = option;
+          optionBtn.onclick = () => submitAnswer(index);
+          optionsEl.appendChild(optionBtn);
+        });
+        
+        // Start timer based on question type
+        const timeLimit = question.type === 'image' ? 30 : 20;
+        startTimer(timeLimit);
+      });
+    });
+
+    socket.on('gameUpdate', (data) => {
+      updateRaceTrack(data.topPlayers);
+      
+      // Jika game sudah selesai, langsung return
+      if (data.gameFinished) return;
+      
+      // Cek jika pemain ini sudah selesai
+      const myPlayer = data.finishedPlayers.find(p => p.id === playerId);
+      if (myPlayer) {
+        showWaitingRoom(data.finishedPlayers);
+      } else {
+        showWaitingRoom(null);
+      }
+    });
+
+    socket.on('gameOver', (data) => {
+      showWaitingRoom(null);
+
+      document.getElementById('leaderboard').classList.remove('hidden');
+      
+      console.log('Game over:', data);
+      
+      gameScreenEl.classList.add('hidden');
+      gameOverScreenEl.classList.remove('hidden');
+      
+      // Show winner
+      winnerAnnouncement.innerHTML = `
+        <h3 class="text-2xl font-bold text-yellow-400 mb-2">🏆 Pemenang: ${data.winner.name}</h3>
+        <p class="text-gray-300">Skor: ${data.winner.score} poin</p>
+        <img src="assets/${data.winner.motor}.png" class="w-16 h-16 mx-auto mt-2 object-contain">
+      `;
+      
+      // Show final scores
+      finalScores.innerHTML = `
+        <h4 class="text-lg font-bold text-white mb-3">Skor Akhir:</h4>
+        <div class="space-y-2">
+          ${data.scores.map((player, index) => `
+            <div class="flex justify-between items-center bg-gray-700 p-2 rounded">
+              <div class="flex items-center">
+                <img src="assets/${player.motor}.png" class="w-6 h-6 object-contain mr-2">
+                <span class="text-white">${index + 1}. ${player.name}</span>
+              </div>
+              <span class="text-yellow-400 font-bold">${player.score} pts</span>
+            </div>
+          `).join('')}
+        </div>
+      `;
+    });
+
+    // Game Functions
+    function submitAnswer(answerIndex) {
+      if (hasAnswered) return;
+      
+      hasAnswered = true;
+      clearInterval(timerInterval);
+      
+      document.querySelectorAll('#options button').forEach((btn, index) => {
+        btn.disabled = true;
+        btn.classList.add('opacity-50');
+        if (index === answerIndex) {
+          btn.classList.add('bg-blue-600');
+        }
+      });
+      
+      if (answerIndex >= 0) {
+        socket.emit('submitAnswer', {
+          questionId: currentQuestion.id,
+          answerIndex: answerIndex,
+          questionStartTime: questionStartTime
+        });
+      }
+    }
+
+    function startTimer(seconds) {
+      clearInterval(timerInterval);
+      timeLeft = seconds;
+      updateTimerBar();
+      
+      timerInterval = setInterval(() => {
+        timeLeft--;
+        updateTimerBar();
+        
+        if (timeLeft <= 0) {
+          clearInterval(timerInterval);
+          if (!hasAnswered) {
+            document.querySelectorAll('#options button').forEach(btn => {
+              btn.disabled = true;
+              btn.classList.add('opacity-50');
+            });
+            hasAnswered = true;
+            socket.emit('submitAnswer', {
+              questionId: currentQuestion.id,
+              answerIndex: -1,
+              questionStartTime: questionStartTime
+            });
+          }
+        }
+      }, 1000);
+    }
+
+    function updateTimerBar() {
+      const totalTime = currentQuestion.type === 'image' ? 30 : 20;
+      const percentage = (timeLeft / totalTime) * 100;
+      timerBarEl.style.width = `${percentage}%`;
+      timeLeftEl.textContent = `${timeLeft}s`;
+      
+      // Warna berbeda untuk jenis soal berbeda
+      if (currentQuestion.type === 'image') {
+        timerBarEl.style.background = 'linear-gradient(90deg, #4f46e5 0%, #ec4899 100%)';
+      } else {
+        timerBarEl.style.background = 'linear-gradient(90deg, #10b981 0%, #3b82f6 100%)';
+      }
+      
+      if (timeLeft <= 5) {
+        timerBarEl.classList.add('animate-pulse');
+      } else {
+        timerBarEl.classList.remove('animate-pulse');
+      }
+    }
+    
+  function updateRaceTrack(topPlayers) {
+    if (!topPlayers) return;
+    
+    // Clear all tracks
+    document.getElementById('track1').innerHTML = '<div class="track-finish"></div>';
+    document.getElementById('track2').innerHTML = '<div class="track-finish"></div>';
+    document.getElementById('track3').innerHTML = '<div class="track-finish"></div>';
+    
+    topPlayers.forEach((player, index) => {
+      const trackId = `track${index + 1}`;
+      const trackEl = document.getElementById(trackId);
+      
+      const playerEl = document.createElement('div');
+      playerEl.className = 'player-bike';
+      
+      playerEl.innerHTML = `
+        <div class="player-name">${player.name}</div>
+        <img src="assets/${player.motor}.png" class="motor-image">
+      `;
+      
+      const maxScore = Math.max(...topPlayers.map(p => p.score), 1);
+      const position = Math.min(90, (player.score / Math.max(maxScore, 500)) * 90);
+      playerEl.style.left = `${position}%`;
+      
+      trackEl.appendChild(playerEl);
+    });
+  }
+    function updateLeaderboard(players) {
+      if (!players) return;
+      
+      const sortedPlayers = players.sort((a, b) => b.score - a.score);
+      
+      leaderboardListEl.innerHTML = sortedPlayers.map((player, index) => `
+        <div class="flex items-center p-2 ${player.id === playerId ? 'bg-gray-700 rounded-lg' : ''}">
+          <span class="w-6 text-center font-bold text-white">${index + 1}.</span>
+          <img src="assets/${player.motor}.png" class="w-6 h-6 object-contain mr-3 ml-2">
+          <span class="flex-1 truncate text-white">${player.name}</span>
+          <span class="w-16 text-right font-mono text-yellow-400">${player.score} pts</span>
+        </div>
+      `).join('');
+    }
+
+  
+function showWaitingRoom(finishedPlayers) {
+  let waitingRoom = document.getElementById('waitingRoom');
+  
+  if (finishedPlayers && finishedPlayers.length > 0) {
+    if (!waitingRoom) {
+      waitingRoom = document.createElement('div');
+      waitingRoom.id = 'waitingRoom';
+      waitingRoom.className = 'bg-gray-800 rounded-xl p-6 text-center animate-fadeIn mb-4';
+      waitingRoom.innerHTML = `
+        <h3 class="text-xl font-bold text-white mb-4">🏁 Menunggu Pemain Lain...</h3>
+        <div class="grid grid-cols-2 md:grid-cols-3 gap-3" id="finishedPlayersGrid"></div>
+      `;
+      
+      const leaderboard = document.getElementById('leaderboard');
+      leaderboard.parentNode.insertBefore(waitingRoom, leaderboard);
+    }
+
+    const finishedGrid = document.getElementById('finishedPlayersGrid');
+    finishedGrid.innerHTML = finishedPlayers.map(player => `
+      <div class="flex flex-col items-center p-3 bg-gray-700 rounded-lg">
+        <img src="assets/${player.motor}.png" class="w-12 h-12 object-contain mb-2">
+        <span class="text-white text-sm truncate w-full text-center">${player.name}</span>
+      </div>
+    `).join('');
+    
+    document.getElementById('questionPanel').classList.add('hidden');
+  } else if (waitingRoom) {
+    waitingRoom.remove();
+    document.getElementById('questionPanel').classList.remove('hidden');
+  }
+}
+    // PDF Generation
+    function generatePDF() {
+      const { jsPDF } = window.jspdf;
+      
+      const tempDiv = document.createElement('div');
+      tempDiv.style.position = 'absolute';
+      tempDiv.style.left = '-9999px';
+      tempDiv.style.backgroundColor = '#1F2937';
+      tempDiv.style.padding = '20px';
+      tempDiv.style.borderRadius = '12px';
+      tempDiv.style.width = '400px';
+      
+      const leaderboardContent = document.getElementById('finalScores').cloneNode(true);
+      const winnerContent = document.getElementById('winnerAnnouncement').cloneNode(true);
+      
+      const title = document.createElement('h1');
+      title.textContent = 'Hasil Race';
+      title.style.color = '#FFFFFF';
+      title.style.fontSize = '24px';
+      title.style.fontWeight = 'bold';
+      title.style.marginBottom = '20px';
+      title.style.textAlign = 'center';
+      
+      tempDiv.appendChild(title);
+      tempDiv.appendChild(winnerContent);
+      tempDiv.appendChild(leaderboardContent);
+      
+      document.body.appendChild(tempDiv);
+      
+      html2canvas(tempDiv).then(canvas => {
+        const imgData = canvas.toDataURL('image/png');
+        const pdf = new jsPDF({
+          orientation: 'portrait',
+          unit: 'mm'
+        });
+        
+        const imgProps = pdf.getImageProperties(imgData);
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+        
+        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+        pdf.save('hasil.pdf');
+        
+        document.body.removeChild(tempDiv);
+      });
+    }
+
+    document.getElementById('downloadPdfBtn').addEventListener('click', generatePDF);
+  </script>
+</body>
+</html>
