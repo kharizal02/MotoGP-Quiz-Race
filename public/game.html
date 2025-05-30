@@ -1184,7 +1184,7 @@ function showWaitingRoom(finishedPlayers) {
   }
 }
 
- // PDF Generation
+  // PDF Generation
   function generatePDF() {
     const { jsPDF } = window.jspdf;
     const pdf = new jsPDF();
@@ -1220,26 +1220,42 @@ function showWaitingRoom(finishedPlayers) {
       pdf.setFont(undefined, 'bold');
       pdf.text(`Pemenang: ${scoresData[0].name}`, 105, 40, { align: 'center' });
       pdf.setFont(undefined, 'normal');
-      pdf.text(`Dengan skor: ${scoresData[0].score} poin`, 105, 46, { align: 'center' });
+      pdf.text(`Total Skor: ${scoresData[0].score} poin (Jawaban: ${scoresData[0].correct} benar, ${scoresData[0].wrong} salah)`, 105, 46, { align: 'center' });
+      
+      // Tampilkan waktu finish jika tersedia
+      if (scoresData[0].finishTime) {
+        pdf.text(`Waktu Finish: ${formatFinishTime(scoresData[0].finishTime)}`, 105, 52, { align: 'center' });
+      }
     }
     
     // Set margins and row height
     const margin = 15;
     const rowHeight = 10;
-    let yPosition = margin + 40; // Mulai lebih rendah untuk memberi ruang info pemenang
-    const itemsPerPage = 24; // Jumlah item per halaman
+    let yPosition = margin + (scoresData[0]?.finishTime ? 60 : 50); // Sesuaikan berdasarkan ada/tidak waktu finish
+    const itemsPerPage = 20; // Kurangi karena ada kolom tambahan
     
-    // Header tabel
-    pdf.setFontSize(12);
+    // Header tabel yang diperbarui
+    pdf.setFontSize(10); // Ukuran font lebih kecil untuk muat lebih banyak kolom
     pdf.setFont(undefined, 'bold');
-    pdf.text('Pos', margin, yPosition);
-    pdf.text('Nama Pemain', margin + 20, yPosition);
-    pdf.text('Skor', margin + 100, yPosition);
-    pdf.text('Benar', margin + 120, yPosition);
-    pdf.text('Salah', margin + 140, yPosition);
+    
+    // Buat array untuk header kolom
+    const headers = [
+      { text: 'Pos', x: margin },
+      { text: 'Nama', x: margin + 15 },
+      { text: 'Skor', x: margin + 70 },
+      { text: 'Benar', x: margin + 85 },
+      { text: 'Salah', x: margin + 100 },
+      { text: 'Waktu Finish', x: margin + 115 },
+      { text: 'Bonus', x: margin + 140 }
+    ];
+    
+    // Gambar header kolom
+    headers.forEach(header => {
+      pdf.text(header.text, header.x, yPosition);
+    });
     
     // Garis header
-    pdf.line(margin, yPosition + 2, 195, yPosition + 2);
+    pdf.line(margin, yPosition + 6, 195, yPosition + 6);
     
     // Data tabel
     pdf.setFont(undefined, 'normal');
@@ -1252,16 +1268,25 @@ function showWaitingRoom(finishedPlayers) {
       // Add data for current chunk
       chunk.forEach((player, index) => {
         const currentIndex = i + index;
-        pdf.text(`${currentIndex + 1}`, margin, yPosition);
         
-        // Potong nama jika terlalu panjang
-        const name = player.name.length > 20 ? 
-          player.name.substring(0, 20) + '...' : 
-          player.name;
-        pdf.text(name, margin + 20, yPosition);
-        pdf.text(`${player.score}`, margin + 100, yPosition);
-        pdf.text(`${player.correct || 0}`, margin + 120, yPosition);
-        pdf.text(`${player.wrong || 0}`, margin + 140, yPosition);
+        // Hitung bonus finish
+        const finishBonus = calculateFinishBonus(player.finishPosition);
+        
+        // Data untuk setiap kolom
+        const rowData = [
+          { text: `${currentIndex + 1}`, x: margin },
+          { text: player.name.length > 15 ? player.name.substring(0, 15) + '...' : player.name, x: margin + 15 },
+          { text: `${player.score}`, x: margin + 70 },
+          { text: `${player.correct || 0}`, x: margin + 85 },
+          { text: `${player.wrong || 0}`, x: margin + 100 },
+          { text: player.finishTime ? formatFinishTime(player.finishTime) : '-', x: margin + 115 },
+          { text: `${finishBonus > 0 ? '+' + finishBonus : '-'}`, x: margin + 140 }
+        ];
+        
+        // Gambar data baris
+        rowData.forEach(data => {
+          pdf.text(data.text, data.x, yPosition);
+        });
         
         yPosition += rowHeight;
         
@@ -1272,12 +1297,10 @@ function showWaitingRoom(finishedPlayers) {
           
           // Header tabel untuk halaman baru
           pdf.setFont(undefined, 'bold');
-          pdf.text('Pos', margin, yPosition);
-          pdf.text('Nama Pemain', margin + 20, yPosition);
-          pdf.text('Skor', margin + 100, yPosition);
-          pdf.text('Benar', margin + 120, yPosition);
-          pdf.text('Salah', margin + 140, yPosition);
-          pdf.line(margin, yPosition + 2, 195, yPosition + 2);
+          headers.forEach(header => {
+            pdf.text(header.text, header.x, yPosition);
+          });
+          pdf.line(margin, yPosition + 6, 195, yPosition + 6);
           
           pdf.setFont(undefined, 'normal');
           yPosition += 10;
@@ -1297,16 +1320,49 @@ function showWaitingRoom(finishedPlayers) {
     pdf.save(`CT_Racing_Results_${formattedDate}.pdf`);
   }
   document.getElementById('downloadPdfBtn').addEventListener('click', generatePDF);
+  // Fungsi untuk menghitung bonus finish
+  function calculateFinishBonus(position) {
+    if (!position) return 0;
+    if (position === 1) return 20;
+    if (position >= 2 && position <= 20) return 21 - position;
+    return 0;
+  }
+
+  // Fungsi untuk memformat waktu finish
+function formatFinishTime(totalMilliseconds) {
+  if (!totalMilliseconds || isNaN(totalMilliseconds)) return '-';
+  
+  const totalSeconds = Math.floor(totalMilliseconds / 1000);
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  const milliseconds = totalMilliseconds % 1000;
+  
+  return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}.${milliseconds.toString().padStart(3, '0')}`;
+}
 
   function getCurrentScoresData() {
     if (!window.gameOverData || !window.gameOverData.scores) return [];
     
-    return window.gameOverData.scores.map(player => ({
-      name: player.name || 'Unknown',
-      score: player.score || 0,
-      correct: player.correct || 0,
-      wrong: player.wrong || 0
-    }));
+    return window.gameOverData.scores.map(player => {
+      // Pastikan finishTime ada dan valid
+      let finishTimeFormatted = null;
+      if (player.finishTime) {
+        try {
+          finishTimeFormatted = new Date(player.finishTime).getTime();
+        } catch (e) {
+          finishTimeFormatted = null;
+        }
+      }
+      
+      return {
+        name: player.name || 'Unknown',
+        score: player.score || 0,
+        correct: player.correct || 0,
+        wrong: player.wrong || 0,
+        finishPosition: player.finishPosition || 0,
+        finishTime: finishTimeFormatted
+      };
+    }).sort((a, b) => b.score - a.score); // Urutkan berdasarkan skor tertinggi
   }
 </script>
 </body>
