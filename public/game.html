@@ -1185,141 +1185,128 @@ function showWaitingRoom(finishedPlayers) {
 }
 
   // PDF Generation
-  function generatePDF() {
-    const { jsPDF } = window.jspdf;
-    const pdf = new jsPDF();
-    
-    // Set font styles
-    pdf.setFont('helvetica', 'bold');
-    
-    // Header
-    pdf.setFontSize(20);
-    pdf.text('CT Racing - Hasil Lomba', 105, 20, { align: 'center' });
-    
-    // Tanggal dan waktu
-    pdf.setFontSize(10);
-    pdf.setFont(undefined, 'normal');
-    const now = new Date();
-    const currentDate = now.toLocaleDateString('id-ID', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric'
-    });
-    const currentTime = now.toLocaleTimeString('id-ID', {
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-    pdf.text(`Tanggal: ${currentDate} - ${currentTime} WIB`, 105, 30, { align: 'center' });
-    
-    // Ambil data dari finalScores
-    const scoresData = getCurrentScoresData();
-    
-    // Tampilkan informasi pemenang di bawah tanggal
-    if (scoresData.length > 0) {
-      pdf.setFontSize(12);
-      pdf.setFont(undefined, 'bold');
-      pdf.text(`Pemenang: ${scoresData[0].name}`, 105, 40, { align: 'center' });
-      pdf.setFont(undefined, 'normal');
-      pdf.text(`Total Skor: ${scoresData[0].score} poin (Jawaban: ${scoresData[0].correct} benar, ${scoresData[0].wrong} salah)`, 105, 46, { align: 'center' });
-      
-      // Tampilkan waktu finish jika tersedia
-      if (scoresData[0].finishTime) {
-        pdf.text(`Waktu Finish: ${formatFinishTime(scoresData[0].finishTime)}`, 105, 52, { align: 'center' });
-      }
-    }
-    
-    // Set margins and row height
-    const margin = 15;
-    const rowHeight = 10;
-    let yPosition = margin + (scoresData[0]?.finishTime ? 60 : 50); // Sesuaikan berdasarkan ada/tidak waktu finish
-    const itemsPerPage = 20; // Kurangi karena ada kolom tambahan
-    
-    // Header tabel yang diperbarui
-    pdf.setFontSize(10); // Ukuran font lebih kecil untuk muat lebih banyak kolom
+function generatePDF() {
+  const { jsPDF } = window.jspdf;
+  const pdf = new jsPDF();
+  
+  // Set font styles
+  pdf.setFont('helvetica', 'bold');
+  
+  // Header
+  pdf.setFontSize(20);
+  pdf.text('CT Racing - Hasil Lomba', 105, 20, { align: 'center' });
+  
+  // Tanggal dan waktu
+  pdf.setFontSize(10);
+  pdf.setFont(undefined, 'normal');
+  const now = new Date();
+  const currentDate = now.toLocaleDateString('id-ID', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric'
+  });
+  const currentTime = now.toLocaleTimeString('id-ID', {
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+  pdf.text(`Tanggal: ${currentDate} - ${currentTime} WIB`, 105, 30, { align: 'center' });
+  
+  // Ambil data dari gameOverData yang sudah diurutkan oleh server
+  const scoresData = window.gameOverData?.scores || [];
+  
+  // Tampilkan informasi pemenang di bawah tanggal
+  if (scoresData.length > 0) {
+    pdf.setFontSize(12);
     pdf.setFont(undefined, 'bold');
-    
-    // Buat array untuk header kolom
-    const headers = [
-      { text: 'Pos', x: margin },
-      { text: 'Nama', x: margin + 15 },
-      { text: 'Skor', x: margin + 70 },
-      { text: 'Benar', x: margin + 85 },
-      { text: 'Salah', x: margin + 100 },
-      { text: 'Waktu Finish', x: margin + 115 },
-      { text: 'Bonus', x: margin + 140 }
-    ];
-    
-    // Gambar header kolom
-    headers.forEach(header => {
-      pdf.text(header.text, header.x, yPosition);
-    });
-    
-    // Garis header
-    pdf.line(margin, yPosition + 6, 195, yPosition + 6);
-    
-    // Data tabel
+    pdf.text(`Pemenang: ${scoresData[0].name}`, 105, 40, { align: 'center' });
     pdf.setFont(undefined, 'normal');
-    yPosition += 10;
+    pdf.text(`Total Skor: ${scoresData[0].score} poin (Jawaban: ${scoresData[0].correct} benar, ${scoresData[0].wrong} salah)`, 105, 46, { align: 'center' });
     
-    // Split data into chunks for multi-page
-    for (let i = 0; i < scoresData.length; i += itemsPerPage) {
-      const chunk = scoresData.slice(i, i + itemsPerPage);
-      
-      // Add data for current chunk
-      chunk.forEach((player, index) => {
-        const currentIndex = i + index;
-        
-        // Hitung bonus finish
-        const finishBonus = calculateFinishBonus(player.finishPosition);
-        
-        // Data untuk setiap kolom
-        const rowData = [
-          { text: `${currentIndex + 1}`, x: margin },
-          { text: player.name.length > 15 ? player.name.substring(0, 15) + '...' : player.name, x: margin + 15 },
-          { text: `${player.score}`, x: margin + 70 },
-          { text: `${player.correct || 0}`, x: margin + 85 },
-          { text: `${player.wrong || 0}`, x: margin + 100 },
-          { text: player.finishTime ? formatFinishTime(player.finishTime) : '-', x: margin + 115 },
-          { text: `${finishBonus > 0 ? '+' + finishBonus : '-'}`, x: margin + 140 }
-        ];
-        
-        // Gambar data baris
-        rowData.forEach(data => {
-          pdf.text(data.text, data.x, yPosition);
-        });
-        
-        yPosition += rowHeight;
-        
-        // Jika mencapai akhir halaman, buat halaman baru
-        if (yPosition > 270 && currentIndex < scoresData.length - 1) {
-          pdf.addPage();
-          yPosition = margin + 10;
-          
-          // Header tabel untuk halaman baru
-          pdf.setFont(undefined, 'bold');
-          headers.forEach(header => {
-            pdf.text(header.text, header.x, yPosition);
-          });
-          pdf.line(margin, yPosition + 6, 195, yPosition + 6);
-          
-          pdf.setFont(undefined, 'normal');
-          yPosition += 10;
-        }
-      });
+    // Tampilkan waktu finish jika tersedia
+    if (scoresData[0].finishTime) {
+      pdf.text(`Waktu Finish: ${formatFinishTime(scoresData[0].finishTime)}`, 105, 52, { align: 'center' });
     }
-    
-    // Garis penutup
-    pdf.line(margin, yPosition + 2, 195, yPosition + 2);
-    
-    // Format nama file dengan tanggal dan waktu
-    const formattedDate = now.toISOString()
-      .replace(/[:.]/g, '-')
-      .replace('T', '_')
-      .slice(0, 16);
-    
-    pdf.save(`CT_Racing_Results_${formattedDate}.pdf`);
   }
-  document.getElementById('downloadPdfBtn').addEventListener('click', generatePDF);
+  
+  // Set margins and row height
+  const margin = 15;
+  const rowHeight = 10;
+  let yPosition = margin + (scoresData[0]?.finishTime ? 60 : 50);
+  const itemsPerPage = 20;
+  
+  // Header tabel
+  pdf.setFontSize(10);
+  pdf.setFont(undefined, 'bold');
+  
+  const headers = [
+    { text: 'Pos', x: margin },
+    { text: 'Nama', x: margin + 15 },
+    { text: 'Skor', x: margin + 70 },
+    { text: 'Benar', x: margin + 85 },
+    { text: 'Salah', x: margin + 100 },
+    { text: 'Waktu Finish', x: margin + 115 },
+    { text: 'Bonus Finish', x: margin + 140 }
+  ];
+  
+  headers.forEach(header => {
+    pdf.text(header.text, header.x, yPosition);
+  });
+  
+  pdf.line(margin, yPosition + 6, 195, yPosition + 6);
+  
+  pdf.setFont(undefined, 'normal');
+  yPosition += 10;
+  
+  for (let i = 0; i < scoresData.length; i += itemsPerPage) {
+    const chunk = scoresData.slice(i, i + itemsPerPage);
+    
+    chunk.forEach((player, index) => {
+      const currentIndex = i + index;
+      // Hitung bonus finish yang sebenarnya diterima pemain
+      const finishBonus = player.score - (player.correct * 4); // Total skor - (jawaban benar * 4 poin)
+      
+      const rowData = [
+        { text: `${currentIndex + 1}`, x: margin },
+        { text: player.name.length > 15 ? player.name.substring(0, 15) + '...' : player.name, x: margin + 15 },
+        { text: `${player.score}`, x: margin + 70 },
+        { text: `${player.correct || 0}`, x: margin + 85 },
+        { text: `${player.wrong || 0}`, x: margin + 100 },
+        { text: player.finishTime ? formatFinishTime(player.finishTime) : '-', x: margin + 115 },
+        { text: `${finishBonus > 0 ? '+' + finishBonus : '0'}`, x: margin + 140 } // Tampilkan 0 jika tidak ada bonus
+      ];
+      
+      rowData.forEach(data => {
+        pdf.text(data.text, data.x, yPosition);
+      });
+      
+      yPosition += rowHeight;
+      if (yPosition > 270 && currentIndex < scoresData.length - 1) {
+        pdf.addPage();
+        yPosition = margin + 10;
+        
+        pdf.setFont(undefined, 'bold');
+        headers.forEach(header => {
+          pdf.text(header.text, header.x, yPosition);
+        });
+        pdf.line(margin, yPosition + 6, 195, yPosition + 6);
+        
+        pdf.setFont(undefined, 'normal');
+        yPosition += 10;
+      }
+    });
+  }
+  
+  pdf.line(margin, yPosition + 2, 195, yPosition + 2);
+  
+  const formattedDate = now.toISOString()
+    .replace(/[:.]/g, '-')
+    .replace('T', '_')
+    .slice(0, 16);
+  
+  pdf.save(`CT_Racing_Results_${formattedDate}.pdf`);
+}
+
+document.getElementById('downloadPdfBtn').addEventListener('click', generatePDF);
   // Fungsi untuk menghitung bonus finish
   function calculateFinishBonus(position) {
     if (!position) return 0;
