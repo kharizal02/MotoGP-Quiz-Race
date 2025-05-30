@@ -1183,66 +1183,120 @@ function showWaitingRoom(finishedPlayers) {
     document.getElementById('questionPanel').classList.remove('hidden');
   }
 }
-    // PDF Generation
+
+ // PDF Generation
   function generatePDF() {
     const { jsPDF } = window.jspdf;
     const pdf = new jsPDF();
     
+    // Set font styles
+    pdf.setFont('helvetica', 'bold');
+    
     // Header
     pdf.setFontSize(20);
-    pdf.setFont(undefined, 'bold');
     pdf.text('CT Racing - Hasil Lomba', 105, 20, { align: 'center' });
     
-    // Tanggal
+    // Tanggal dan waktu
     pdf.setFontSize(10);
     pdf.setFont(undefined, 'normal');
-    const currentDate = new Date().toLocaleDateString('id-ID');
-    pdf.text(`Tanggal: ${currentDate}`, 20, 35);
+    const now = new Date();
+    const currentDate = now.toLocaleDateString('id-ID', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    });
+    const currentTime = now.toLocaleTimeString('id-ID', {
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+    pdf.text(`Tanggal: ${currentDate} - ${currentTime} WIB`, 105, 30, { align: 'center' });
     
     // Ambil data dari finalScores
     const scoresData = getCurrentScoresData();
     
+    // Tampilkan informasi pemenang di bawah tanggal
+    if (scoresData.length > 0) {
+      pdf.setFontSize(12);
+      pdf.setFont(undefined, 'bold');
+      pdf.text(`Pemenang: ${scoresData[0].name}`, 105, 40, { align: 'center' });
+      pdf.setFont(undefined, 'normal');
+      pdf.text(`Dengan skor: ${scoresData[0].score} poin`, 105, 46, { align: 'center' });
+    }
+    
+    // Set margins and row height
+    const margin = 15;
+    const rowHeight = 10;
+    let yPosition = margin + 40; // Mulai lebih rendah untuk memberi ruang info pemenang
+    const itemsPerPage = 24; // Jumlah item per halaman
+    
     // Header tabel
     pdf.setFontSize(12);
     pdf.setFont(undefined, 'bold');
-    pdf.text('Pos', 20, 50);
-    pdf.text('Nama Pemain', 40, 50);
-    pdf.text('Skor', 120, 50);
-    pdf.text('Benar', 145, 50);
-    pdf.text('Salah', 170, 50);
+    pdf.text('Pos', margin, yPosition);
+    pdf.text('Nama Pemain', margin + 20, yPosition);
+    pdf.text('Skor', margin + 100, yPosition);
+    pdf.text('Benar', margin + 120, yPosition);
+    pdf.text('Salah', margin + 140, yPosition);
     
     // Garis header
-    pdf.line(15, 52, 195, 52);
+    pdf.line(margin, yPosition + 2, 195, yPosition + 2);
     
     // Data tabel
     pdf.setFont(undefined, 'normal');
-    let yPosition = 62;
+    yPosition += 10;
     
-    scoresData.forEach((player, index) => {
-      pdf.text(`${index + 1}`, 20, yPosition);
-      const name = player.name.length > 15 ? player.name.substring(0, 15) + '...' : player.name;
-      pdf.text(name, 40, yPosition);
-      pdf.text(`${player.score}`, 120, yPosition);
-      pdf.text(`${player.correct || 0}`, 145, yPosition);
-      pdf.text(`${player.wrong || 0}`, 170, yPosition);
+    // Split data into chunks for multi-page
+    for (let i = 0; i < scoresData.length; i += itemsPerPage) {
+      const chunk = scoresData.slice(i, i + itemsPerPage);
       
-      yPosition += 10;
-    });
-    
-    // Garis penutup
-    pdf.line(15, yPosition + 2, 195, yPosition + 2);
-    
-    // Winner highlight
-    if (scoresData.length > 0) {
-      pdf.setFontSize(14);
-      pdf.setFont(undefined, 'bold');
-      pdf.text(`Pemenang: ${scoresData[0].name}`, 105, yPosition + 15, { align: 'center' });
+      // Add data for current chunk
+      chunk.forEach((player, index) => {
+        const currentIndex = i + index;
+        pdf.text(`${currentIndex + 1}`, margin, yPosition);
+        
+        // Potong nama jika terlalu panjang
+        const name = player.name.length > 20 ? 
+          player.name.substring(0, 20) + '...' : 
+          player.name;
+        pdf.text(name, margin + 20, yPosition);
+        pdf.text(`${player.score}`, margin + 100, yPosition);
+        pdf.text(`${player.correct || 0}`, margin + 120, yPosition);
+        pdf.text(`${player.wrong || 0}`, margin + 140, yPosition);
+        
+        yPosition += rowHeight;
+        
+        // Jika mencapai akhir halaman, buat halaman baru
+        if (yPosition > 270 && currentIndex < scoresData.length - 1) {
+          pdf.addPage();
+          yPosition = margin + 10;
+          
+          // Header tabel untuk halaman baru
+          pdf.setFont(undefined, 'bold');
+          pdf.text('Pos', margin, yPosition);
+          pdf.text('Nama Pemain', margin + 20, yPosition);
+          pdf.text('Skor', margin + 100, yPosition);
+          pdf.text('Benar', margin + 120, yPosition);
+          pdf.text('Salah', margin + 140, yPosition);
+          pdf.line(margin, yPosition + 2, 195, yPosition + 2);
+          
+          pdf.setFont(undefined, 'normal');
+          yPosition += 10;
+        }
+      });
     }
     
-    pdf.save(`CT_Racing_Results_${currentDate.replace(/\//g, '-')}.pdf`);
+    // Garis penutup
+    pdf.line(margin, yPosition + 2, 195, yPosition + 2);
+    
+    // Format nama file dengan tanggal dan waktu
+    const formattedDate = now.toISOString()
+      .replace(/[:.]/g, '-')
+      .replace('T', '_')
+      .slice(0, 16);
+    
+    pdf.save(`CT_Racing_Results_${formattedDate}.pdf`);
   }
-
-    document.getElementById('downloadPdfBtn').addEventListener('click', generatePDF);
+  document.getElementById('downloadPdfBtn').addEventListener('click', generatePDF);
 
   function getCurrentScoresData() {
     if (!window.gameOverData || !window.gameOverData.scores) return [];
@@ -1253,7 +1307,7 @@ function showWaitingRoom(finishedPlayers) {
       correct: player.correct || 0,
       wrong: player.wrong || 0
     }));
-  }  
+  }
 </script>
 </body>
 </html>
