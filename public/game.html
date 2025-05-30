@@ -1188,8 +1188,6 @@ function showWaitingRoom(finishedPlayers) {
 function generatePDF() {
   const { jsPDF } = window.jspdf;
   const pdf = new jsPDF();
-  
-  // Set font styles
   pdf.setFont('helvetica', 'bold');
   
   // Header
