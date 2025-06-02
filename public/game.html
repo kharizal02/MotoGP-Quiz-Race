@@ -534,6 +534,25 @@
       margin-bottom: 1.5rem;
       border: 2px solid rgba(255, 215, 0, 0.3);
     }
+    .option-button {
+      transition: background-color 0.3s ease, color 0.3s ease, border 0.3s ease;
+      border: 2px solid #e5e7eb;
+      padding: 12px 20px;
+      margin: 5px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 16px;
+      background-color: white;
+    }
+
+    .option-button:hover:not(:disabled) {
+      background-color: #f3f4f6;
+      border-color: #d1d5db;
+    }
+
+    .option-button:disabled {
+    cursor: not-allowed;
+    }
 </style>
 </head>
 <body>
@@ -918,65 +937,74 @@
       document.querySelector('.moving-bikes').style.display = 'none';
     });
 
-    socket.on('newQuestion', (question) => {
-      console.log('New question:', question);
-      currentQuestion = question;
-      questionStartTime = question.startTime;
-      hasAnswered = false;
-      
-      // Show loading state
-      questionTextEl.textContent = "Memuat soal...";
-      optionsEl.innerHTML = '<div class="text-center py-4"><div class="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-white"></div></div>';
-      
-      // Preload image if exists
-      let imageLoaded = Promise.resolve();
-      if (question.type === 'image' && question.image) {
-        imageLoaded = new Promise((resolve) => {
-          const img = new Image();
-          img.src = question.image;
-          img.onload = resolve;
-          img.onerror = resolve; // Continue even if image fails to load
-        });
-      }
-      
-      // After loading complete, show question
-      imageLoaded.then(() => {
-        // Update UI
-        questionTextEl.textContent = question.text;
-        questionCounterEl.textContent = `Q${question.current}/${question.total}`;
-        
-        // Clear previous options and image
-        optionsEl.innerHTML = '';
-        const existingImage = document.getElementById('questionImage');
-        if (existingImage) existingImage.remove();
-        
-        // Add image if question has one
-        if (question.type === 'image' && question.image) {
-          const imgContainer = document.createElement('div');
-          imgContainer.className = 'mb-4 flex justify-center';
-          const img = document.createElement('img');
-          img.id = 'questionImage';
-          img.src = question.image;
-          img.alt = 'Gambar soal';
-          img.className = 'max-h-48 rounded-lg border-2 border-gray-600 animate-fadeIn';
-          imgContainer.appendChild(img);
-          questionTextEl.after(imgContainer);
-        }
-        
-        // Add new options
-        question.options.forEach((option, index) => {
-          const optionBtn = document.createElement('button');
-          optionBtn.className = 'bg-gray-700 hover:bg-gray-600 text-white p-3 rounded-lg text-left transition-colors animate-fadeIn';
-          optionBtn.textContent = option;
-          optionBtn.onclick = () => submitAnswer(index);
-          optionsEl.appendChild(optionBtn);
-        });
-        
-        // Start timer based on question type
-        const timeLimit = question.type === 'image' ? 30 : 20;
-        startTimer(timeLimit);
-      });
+socket.on('newQuestion', (question) => {
+  console.log('New question:', question);
+  currentQuestion = question;
+  questionStartTime = question.startTime;
+  hasAnswered = false;
+  
+  // TAMBAHAN: Reset tombol dari feedback sebelumnya
+  const existingButtons = optionsEl.querySelectorAll('button');
+  existingButtons.forEach(button => {
+    button.disabled = false;
+    button.style.backgroundColor = '';
+    button.style.color = '';
+    button.style.border = '';
+  });
+  
+  // Show loading state
+  questionTextEl.textContent = "Memuat soal...";
+  optionsEl.innerHTML = '<div class="text-center py-4"><div class="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-white"></div></div>';
+  
+  // Preload image if exists
+  let imageLoaded = Promise.resolve();
+  if (question.type === 'image' && question.image) {
+    imageLoaded = new Promise((resolve) => {
+      const img = new Image();
+      img.src = question.image;
+      img.onload = resolve;
+      img.onerror = resolve; // Continue even if image fails to load
     });
+  }
+  
+  // After loading complete, show question
+  imageLoaded.then(() => {
+    // Update UI
+    questionTextEl.textContent = question.text;
+    questionCounterEl.textContent = `Q${question.current}/${question.total}`;
+    
+    // Clear previous options and image
+    optionsEl.innerHTML = '';
+    const existingImage = document.getElementById('questionImage');
+    if (existingImage) existingImage.remove();
+    
+    // Add image if question has one
+    if (question.type === 'image' && question.image) {
+      const imgContainer = document.createElement('div');
+      imgContainer.className = 'mb-4 flex justify-center';
+      const img = document.createElement('img');
+      img.id = 'questionImage';
+      img.src = question.image;
+      img.alt = 'Gambar soal';
+      img.className = 'max-h-48 rounded-lg border-2 border-gray-600 animate-fadeIn';
+      imgContainer.appendChild(img);
+      questionTextEl.after(imgContainer);
+    }
+    
+    // Add new options
+    question.options.forEach((option, index) => {
+      const optionBtn = document.createElement('button');
+      optionBtn.className = 'option-button bg-gray-700 hover:bg-gray-600 text-white p-3 rounded-lg text-left transition-colors animate-fadeIn';
+      optionBtn.textContent = option;
+      optionBtn.onclick = () => submitAnswer(index);
+      optionsEl.appendChild(optionBtn);
+    });
+    
+    // Start timer based on question type
+    const timeLimit = question.type === 'image' ? 30 : 20;
+    startTimer(timeLimit);
+  });
+});
 
     socket.on('gameUpdate', (data) => {
       updateRaceTrack(data.topPlayers);
@@ -1183,6 +1211,34 @@ function showWaitingRoom(finishedPlayers) {
     document.getElementById('questionPanel').classList.remove('hidden');
   }
 }
+
+socket.on('answerFeedback', (feedbackData) => {
+  console.log('Answer feedback received:', feedbackData);
+  
+  const optionButtons = optionsEl.querySelectorAll('.option-button');
+  
+  // Disable semua tombol untuk mencegah klik ganda
+  optionButtons.forEach(button => {
+    button.disabled = true;
+  });
+  
+  // Tampilkan warna feedback hanya pada tombol yang dipilih user
+  if (feedbackData.selectedAnswer >= 0 && feedbackData.selectedAnswer < optionButtons.length) {
+    const selectedButton = optionButtons[feedbackData.selectedAnswer];
+    
+    if (feedbackData.isCorrect) {
+      // Jawaban benar - hijau
+      selectedButton.style.backgroundColor = '#22c55e';
+      selectedButton.style.color = 'white';
+      selectedButton.style.border = '2px solid #16a34a';
+    } else {
+      // Jawaban salah - merah
+      selectedButton.style.backgroundColor = '#ef4444';
+      selectedButton.style.color = 'white';
+      selectedButton.style.border = '2px solid #dc2626';
+    }
+  }
+});
 
   // PDF Generation
 function generatePDF() {
