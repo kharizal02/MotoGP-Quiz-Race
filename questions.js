@@ -143,21 +143,134 @@ const questions = [
     "options": ["Lesu subdural", "Lesi epidural", "Lesi intraserebral", "Lesi Kranium"],
     "answer": 1
   },
-    {
+  {
     "id": 21,
-    "text": "Berdasarkan hasil citra axial CT Brain non-kontras di samping, anak panah menunjukkan terjadinya ?",
-    "type": "image", 
-    "image": "assets/gambar4.png",
-    "options": ["Lesu subdural", "Lesi epidural", "Lesi intraserebral", "Lesi Kranium"],
+    "text": "Pada pemeriksaan CT-Scan abdomen dengan kontras, posisi lengan pasien yang benar adalah?",
+    "type": "text", 
+    "options": ["Di samping badan", "Di atas kepala dan disanggah dengan bantal", "Ditekuk di depan dada", "Dibiarkan menggantung di samping meja pemeriksaan"],
     "answer": 1
   },
-    {
+  {
     "id": 22,
-    "text": "Berdasarkan hasil citra axial CT Brain non-kontras di samping, anak panah menunjukkan terjadinya ?",
-    "type": "image", 
-    "image": "assets/gambar4.png",
-    "options": ["Lesu subdural", "Lesi epidural", "Lesi intraserebral", "Lesi Kranium"],
+    "text": "Saat melakukan injeksi kontras intravena pada CT-Scan, langkah penting sebelum injeksi adalah?",
+    "type": "text", 
+    "options": ["Memastikan pasien sudah makan", "Melakukan skin test untuk mendeteksi alergi", "Mengatur posisi kepala pasien", "Meminta pasien menahan napas"],
     "answer": 1
+  },
+  {
+    "id": 23,
+    "text": "Pemeriksaan CT scan dengan kontras intravena membutuhkan perhatian khusus pada kondisi berikut, kecuali?",
+    "type": "text", 
+    "options": ["Riwayat alergi terhadap kontras", "Fungsi ginjal pasien", "Kecepatan denyut jantung", "Puasa sebelum pemeriksaan"],
+    "answer": 2
+  },
+  {
+    "id": 24,
+    "text": "Struktur apakah yang ditunjukkan oleh panah biru?",
+    "type": "image", 
+    "image": "assets/gambar5.png",
+    "options": ["Hypothalamus", "Medulla", "Midbrain", "Pons"],
+    "answer": 3
+  },
+  {
+    "id": 25,
+    "text": "Tujuan utama dari persiapan pasien sebelum dilakukan pemeriksaan CT scan adalah?",
+    "type": "text", 
+    "options": ["Mempercepat proses scanning", "Mengurangi biaya pemeriksaan", "Menjamin kenyamanan radiografer", "Menjamin keamanan dan keberhasilan pemeriksaan"],
+    "answer": 3
+  },
+  {
+    "id": 26,
+    "text": "Arti dari istilah “hiperdens” pada citra CT scan adalah?",
+    "type": "text", 
+    "options": ["Wilayah yang tampak lebih gelap dari jaringan sekitarnya", "Semua jawaban benar", "Wilayah yang tampak lebih terang dari jaringan sekitarnya", "Semua jawaban salah"],
+    "answer": 2
+  },
+  {
+    "id": 27,
+    "text": "Berdasarkan gambar diatas, struktur organ yang ditunjuk oleh nomor 14 adalah?",
+    "type": "image", 
+    "image": "assets/gambar6.png",
+    "options": ["Hepar", "Renal", "Spleen", "Gallbladder"],
+    "answer": 2
+  },
+  {
+    "id": 28,
+    "text": "Mengapa pasien yang mengkonsumsi metformin perlu menghentikan obat tersebut sebelum dan sesudah CT thorax dengan kontras?",
+    "type": "text", 
+    "options": ["Metformin dapat berinteraksi dengan kontras dan menyebabkan masalah ginjal", "Metformin dapat meningkatkan risiko alergi terhadap kontras", "Metformin dapat mempengaruhi kualitas gambar CT scan", "Metformin dapat menyebabkan efek samping yang serius"],
+    "answer": 0
+  },
+  {
+    "id": 29,
+    "text": "Mengapa pada wanita hamil harus berhati-hati atau bahkan tidak diperbolehkan untuk menjalani pemeriksaan CT-Scan?",
+    "type": "text", 
+    "options": ["Karena CT-Scan dapat menyebabkan kontras pada uterus secara langsung", "Karena radiasi dari CT-Scan berpotensi menyebabkan kerusakan DNA dan gangguan perkembangan janin", "Karena CT-Scan menggunakan gelombang ultrasonik berfrekuensi tinggi yang dapat memengaruhi janin","Karena CT-Scan dapat menyebabkan gangguan hormonal pada ibu hamil"],
+    "answer": 1
+  },
+  {
+    "id": 30,
+    "text": "Dalam pemeriksaan CT Scan kepala terdapat beberapa jenis windowing yang digunakan, kecuali?",
+    "type": "text", 
+    "options": ["Brain window", "Bone window", "Subdural window","Mediastinal window "],
+    "answer": 3
+  },
+  {
+    "id": 31,
+    "text": "Pasien dengan riwayat alergi terhadap kontras iodin harus?",
+    "type": "text", 
+    "options": ["Diberi dosis radiasi lebih rendah", "Dibatasi minum air sebelum pemeriksaan", "Diberi premedikasi seperti steroid dan antihistamin sebelum CT scan","Tidak perlu menjalani persiapan khusus"],
+    "answer": 2
+  },
+  {
+    "id": 32,
+    "text": "CT brain non-kontras dilakukan pada pasien penurunan kesadaran. Tampak hiperdensitas di sulkus parietal. Apa diagnosis kemungkinan?",
+    "type": "text", 
+    "options": ["Edema serebri", "Hematoma subaraknoid", "Iskemia serebral","Gliosis"],
+    "answer": 1
+  },
+  {
+    "id": 33,
+    "text": "Seorang pasien laki-laki 55 tahun datang untuk menjalani pemeriksaan CT Scan abdomen tanpa kontras karena keluhan nyeri perut kanan atas. Dalam memberikan edukasi persiapan, radiografer harus memastikan bahwa?",
+    "type": "text", 
+    "options": ["Pasien berpuasa minimal 6 jam sebelum pemeriksaan dan tidak diperbolehkan minum air sama sekali", "Pasien harus mengonsumsi kontras oral satu jam sebelum pemeriksaan untuk memperjelas gambaran saluran cerna", "Pasien dapat makan dan minum seperti biasa, namun disarankan berkemih sebelum pemeriksaan","Pasien harus menjalani pemeriksaan laboratorium fungsi ginjal sebelum CT Scan dilakukan"],
+    "answer": 2
+  },
+  {
+    "id": 34,
+    "text": "Apakah nama pemeriksaan pada gambar berikut?",
+    "type": "image", 
+    "image": "assets/gambar7.png",
+    "options": ["CT-Scan Abdomen kontras potongan axial fase arteri", "CT-Scan Abdomen non kontras", "CT-Scan Abdomen kontras potongan axial fase vena", "CT-Scan Abdomen kontras potongan axial fase delay"],
+    "answer": 3
+  },
+  {
+    "id": 35,
+    "text": "Tujuan utama dilakukan CT Scan adalah untuk?",
+    "type": "text", 
+    "options": ["Mengobati penyakit dalam", "Meningkatkan daya tahan tubuh", "Mendiagnosis kondisi medis secara detail dengan rekonstruksi 3D","Menyembuhkan luka dalam"],
+    "answer": 2
+  },
+  {
+    "id": 36,
+    "text": "Kontraindikasi pada CT Scan tidak dianjurkan pada?",
+    "type": "text", 
+    "options": ["Pasien dengan diabetes", "Pasien lanjut usia","Wanita hamil", "Anak-anak yang sehat"],
+    "answer": 2
+  },
+  {
+    "id": 37,
+    "text": "Sebelum pemeriksaan CT-Scan menggunakan kontras media, pasien akan dipastikan tidak memiliki riwayat alergi terhadap bahan kontras. Jika pasien memiliki riwayat alergi, maka upaya yang dilakukan adalah?",
+    "type": "text", 
+    "options": ["Memberi obat antikoagulan", "Memberi obat antihistamin","Memberi obat antiinflamasi", "Memberi obat metformin"],
+    "answer": 1
+  },
+  {
+    "id": 38,
+    "text": "Area scanning pada CT abdomen mencakup?",
+    "type": "text", 
+    "options": ["Apex paru hingga krista illiaka", "Diafragma hingga krista illiaka","Diafragma hingga symphisis pubis", "Diafragma hingga symphisis pubis"],
+    "answer": 2
   },
 ];
 
