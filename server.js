@@ -88,7 +88,8 @@ function initPlayerProgress(playerId) {
     score: 0,
     correctAnswers: 0,
     finishTime: null,
-    finishPosition: null
+    finishPosition: null,
+    isProcessingAnswer: false // Tambahan flag untuk mencegah race condition
   };
 }
 
@@ -98,9 +99,15 @@ function sendQuestionToPlayer(playerId) {
   
   if (!progress || progress.currentQuestion >= playerQuestions.length) return;
 
-  clearTimeout(gameState.playerTimers[playerId]);
+  // Clear timer yang ada sebelumnya
+  if (gameState.playerTimers[playerId]) {
+    clearTimeout(gameState.playerTimers[playerId]);
+    delete gameState.playerTimers[playerId];
+  }
 
+  // Reset status
   progress.hasAnswered = false;
+  progress.isProcessingAnswer = false;
 
   const question = playerQuestions[progress.currentQuestion];
   
@@ -128,6 +135,7 @@ function sendQuestionToPlayer(playerId) {
     timeSpent: null
   };
   
+  console.log(`Sending question ${progress.currentQuestion + 1} to player ${gameState.players[playerId]?.name}`);
   io.to(playerId).emit('newQuestion', questionData);
 
   const timeLimit = question.type === 'image' ? 
@@ -136,25 +144,49 @@ function sendQuestionToPlayer(playerId) {
 
   // Set timer baru
   gameState.playerTimers[playerId] = setTimeout(() => {
-    if (!progress.hasAnswered) {
-      // Record timeout as end time
-      if (gameState.playerResponseTimes[playerId] && 
-          gameState.playerResponseTimes[playerId][progress.currentQuestion]) {
-        gameState.playerResponseTimes[playerId][progress.currentQuestion].endTime = Date.now();
-        gameState.playerResponseTimes[playerId][progress.currentQuestion].timeSpent = 
-          gameState.playerResponseTimes[playerId][progress.currentQuestion].endTime - 
-          gameState.playerResponseTimes[playerId][progress.currentQuestion].startTime;
-      }
-      
-      progress.hasAnswered = true;
-      progress.currentQuestion++;
-      if (progress.currentQuestion < playerQuestions.length) {
-        sendQuestionToPlayer(playerId);
-      } else {
-        handlePlayerFinish(playerId);
-      }
-    }
+    handleTimeoutForPlayer(playerId);
   }, timeLimit);
+}
+
+function handleTimeoutForPlayer(playerId) {
+  const progress = gameState.playerProgress[playerId];
+  
+  if (!progress || progress.hasAnswered || progress.isProcessingAnswer) {
+    return; // Sudah dijawab atau sedang diproses
+  }
+  
+  console.log(`Timeout for player ${gameState.players[playerId]?.name} on question ${progress.currentQuestion + 1}`);
+  
+  // Set flag processing
+  progress.isProcessingAnswer = true;
+  progress.hasAnswered = true;
+  
+  // Record timeout as end time
+  if (gameState.playerResponseTimes[playerId] && 
+      gameState.playerResponseTimes[playerId][progress.currentQuestion]) {
+    gameState.playerResponseTimes[playerId][progress.currentQuestion].endTime = Date.now();
+    gameState.playerResponseTimes[playerId][progress.currentQuestion].timeSpent = 
+      gameState.playerResponseTimes[playerId][progress.currentQuestion].endTime - 
+      gameState.playerResponseTimes[playerId][progress.currentQuestion].startTime;
+  }
+  
+  // Clear timer
+  if (gameState.playerTimers[playerId]) {
+    clearTimeout(gameState.playerTimers[playerId]);
+    delete gameState.playerTimers[playerId];
+  }
+  
+  // Pindah ke pertanyaan berikutnya atau selesai
+  progress.currentQuestion++;
+  
+  if (progress.currentQuestion < gameState.playerQuestions[playerId].length) {
+    setTimeout(() => {
+      progress.isProcessingAnswer = false;
+      sendQuestionToPlayer(playerId);
+    }, 500); // Delay singkat untuk menghindari race condition
+  } else {
+    handlePlayerFinish(playerId);
+  }
 }
 
 function handlePlayerFinish(playerId) {
@@ -184,6 +216,8 @@ function handlePlayerFinish(playerId) {
   const finishBonus = calculateFinishBonus(progress.finishPosition);
   progress.score += finishBonus;
   progress.isFinished = true;
+  
+  console.log(`Player ${gameState.players[playerId]?.name} finished with score ${progress.score}`);
   
   updateLeaderboard();
   checkGameCompletion();
@@ -330,7 +364,9 @@ function endGame() {
 
   // Hentikan semua timer yang aktif
   Object.keys(gameState.playerTimers).forEach(playerId => {
-    clearTimeout(gameState.playerTimers[playerId]);
+    if (gameState.playerTimers[playerId]) {
+      clearTimeout(gameState.playerTimers[playerId]);
+    }
   });
   gameState.playerTimers = {};
 
@@ -430,42 +466,42 @@ io.on('connection', (socket) => {
     // Koneksi masih aktif
   });
 
-socket.on('join', (playerData, callback) => {
-  if (gameState.isRunning) {
-    return callback({ success: false, message: "Game sudah berjalan!" });
-  }
+  socket.on('join', (playerData, callback) => {
+    if (gameState.isRunning) {
+      return callback({ success: false, message: "Game sudah berjalan!" });
+    }
 
-  const totalPlayers = Object.keys(gameState.players).length;
-  if (totalPlayers >= MAX_PLAYERS) {
-    return callback({ success: false, message: `Maksimal ${MAX_PLAYERS} pemain!` });
-  }
+    const totalPlayers = Object.keys(gameState.players).length;
+    if (totalPlayers >= MAX_PLAYERS) {
+      return callback({ success: false, message: `Maksimal ${MAX_PLAYERS} pemain!` });
+    }
 
-  if (!playerData.name || !playerData.motor) {
-    return callback({ success: false, message: "Nama dan motor harus dipilih!" });
-  }
+    if (!playerData.name || !playerData.motor) {
+      return callback({ success: false, message: "Nama dan motor harus dipilih!" });
+    }
 
-  // Pastikan socket sudah terhubung sebelum bisa menjadi player
-  if (!gameState.connectedSockets[socket.id]) {
-    return callback({ success: false, message: "Koneksi tidak valid!" });
-  }
+    // Pastikan socket sudah terhubung sebelum bisa menjadi player
+    if (!gameState.connectedSockets[socket.id]) {
+      return callback({ success: false, message: "Koneksi tidak valid!" });
+    }
 
-  // Pindahkan dari connectedSockets ke players
-  gameState.connectedSockets[socket.id].isPlayer = true;
+    // Pindahkan dari connectedSockets ke players
+    gameState.connectedSockets[socket.id].isPlayer = true;
 
-  gameState.players[socket.id] = {
-    id: socket.id,
-    name: playerData.name,
-    motor: playerData.motor || 'motor2',
-    isReady: false,
-    connectedAt: gameState.connectedSockets[socket.id]?.connectedAt || Date.now()
-  };
+    gameState.players[socket.id] = {
+      id: socket.id,
+      name: playerData.name,
+      motor: playerData.motor || 'motor2',
+      isReady: false,
+      connectedAt: gameState.connectedSockets[socket.id]?.connectedAt || Date.now()
+    };
 
-  console.log(`Player joined: ${playerData.name} (${socket.id}) - Motor: ${playerData.motor}`);
-  console.log(`Total players registered: ${Object.keys(gameState.players).length}`);
-  
-  callback({ success: true });
-  updateLobby();
-});
+    console.log(`Player joined: ${playerData.name} (${socket.id}) - Motor: ${playerData.motor}`);
+    console.log(`Total players registered: ${Object.keys(gameState.players).length}`);
+    
+    callback({ success: true });
+    updateLobby();
+  });
 
   socket.on('setReady', (isReady) => {
     const player = gameState.players[socket.id];
@@ -489,48 +525,57 @@ socket.on('join', (playerData, callback) => {
     checkStartConditions();
   });
 
-socket.on('submitAnswer', (data) => {
-  const playerId = socket.id;
-  const progress = gameState.playerProgress[playerId];
-  
-  if (!progress || progress.hasAnswered || !gameState.isRunning) return;
+  socket.on('submitAnswer', (data) => {
+    const playerId = socket.id;
+    const progress = gameState.playerProgress[playerId];
+    
+    if (!progress || progress.hasAnswered || progress.isProcessingAnswer || !gameState.isRunning) {
+      console.log(`Answer rejected for player ${gameState.players[playerId]?.name}: already answered or processing`);
+      return;
+    }
 
-  const playerQuestions = gameState.playerQuestions[playerId];
-  const question = playerQuestions[progress.currentQuestion];
-  const isCorrect = data.answerIndex === question.answer;
+    console.log(`Answer received from player ${gameState.players[playerId]?.name} for question ${progress.currentQuestion + 1}`);
 
-  // Clear timer sebelum pindah pertanyaan
-  clearTimeout(gameState.playerTimers[playerId]);
+    const playerQuestions = gameState.playerQuestions[playerId];
+    const question = playerQuestions[progress.currentQuestion];
+    const isCorrect = data.answerIndex === question.answer;
 
-  // Record end time and time spent for this question
-  if (gameState.playerResponseTimes[playerId] && 
-      gameState.playerResponseTimes[playerId][progress.currentQuestion]) {
-    gameState.playerResponseTimes[playerId][progress.currentQuestion].endTime = Date.now();
-    gameState.playerResponseTimes[playerId][progress.currentQuestion].timeSpent = 
-      gameState.playerResponseTimes[playerId][progress.currentQuestion].endTime - 
-      gameState.playerResponseTimes[playerId][progress.currentQuestion].startTime;
-  }
+    // Set flags untuk mencegah multiple processing
+    progress.hasAnswered = true;
+    progress.isProcessingAnswer = true;
 
-  progress.hasAnswered = true;
-  
-  if (isCorrect) {
-    progress.score += 4;
-    progress.correctAnswers += 1;
-  }
+    // Clear timer sebelum pindah pertanyaan
+    if (gameState.playerTimers[playerId]) {
+      clearTimeout(gameState.playerTimers[playerId]);
+      delete gameState.playerTimers[playerId];
+    }
 
-  // TAMBAHAN: Kirim feedback jawaban ke client (hanya warna)
-  io.to(playerId).emit('answerFeedback', {
-    selectedAnswer: data.answerIndex,
-    isCorrect: isCorrect
-  });
+    // Record end time and time spent for this question
+    if (gameState.playerResponseTimes[playerId] && 
+        gameState.playerResponseTimes[playerId][progress.currentQuestion]) {
+      gameState.playerResponseTimes[playerId][progress.currentQuestion].endTime = Date.now();
+      gameState.playerResponseTimes[playerId][progress.currentQuestion].timeSpent = 
+        gameState.playerResponseTimes[playerId][progress.currentQuestion].endTime - 
+        gameState.playerResponseTimes[playerId][progress.currentQuestion].startTime;
+    }
+    
+    if (isCorrect) {
+      progress.score += 4;
+      progress.correctAnswers += 1;
+    }
 
-  updateLeaderboard();
+    // Kirim feedback jawaban ke client (hanya warna)
+    io.to(playerId).emit('answerFeedback', {
+      selectedAnswer: data.answerIndex,
+      isCorrect: isCorrect
+    });
 
-  try {
-    // Tambahkan delay lebih lama untuk menunjukkan feedback
+    updateLeaderboard();
+
+    // Pindah ke pertanyaan berikutnya dengan delay
     setTimeout(() => {
       progress.currentQuestion++;
-      progress.hasAnswered = false;
+      progress.isProcessingAnswer = false;
       
       if (progress.currentQuestion < playerQuestions.length) {
         sendQuestionToPlayer(playerId);
@@ -538,77 +583,7 @@ socket.on('submitAnswer', (data) => {
         handlePlayerFinish(playerId);
       }
     }, gameState.settings.questionTransitionDelay + 1000); // Tambah 1 detik untuk melihat feedback warna
-  } catch (error) {
-    console.error("Error saat pindah pertanyaan:", error);
-  }
-});
-
-function sendQuestionToPlayer(playerId) {
-  const progress = gameState.playerProgress[playerId];
-  const playerQuestions = gameState.playerQuestions[playerId];
-  
-  if (!progress || progress.currentQuestion >= playerQuestions.length) return;
-
-  clearTimeout(gameState.playerTimers[playerId]);
-
-  progress.hasAnswered = false;
-
-  const question = playerQuestions[progress.currentQuestion];
-  
-  const questionData = {
-    id: question.id,
-    text: question.text,
-    type: question.type || 'text',
-    options: question.options,
-    current: progress.currentQuestion + 1,
-    total: playerQuestions.length,
-    startTime: Date.now()
-  };
-
-  if (question.type === 'image' && question.image) {
-    questionData.image = question.image;
-  }
-  
-  // Initialize response times tracking for this player if not exists
-  gameState.playerResponseTimes[playerId] = gameState.playerResponseTimes[playerId] || [];
-  
-  // Record start time for this question
-  gameState.playerResponseTimes[playerId][progress.currentQuestion] = {
-    startTime: Date.now(),
-    endTime: null,
-    timeSpent: null
-  };
-  
-  io.to(playerId).emit('newQuestion', questionData);
-
-  const timeLimit = question.type === 'image' ? 
-    gameState.settings.timeForImageQuestions : 
-    gameState.settings.timeForTextQuestions;
-
-  // Set timer baru
-  gameState.playerTimers[playerId] = setTimeout(() => {
-    if (!progress.hasAnswered) {
-      // Record timeout as end time
-      if (gameState.playerResponseTimes[playerId] && 
-          gameState.playerResponseTimes[playerId][progress.currentQuestion]) {
-        gameState.playerResponseTimes[playerId][progress.currentQuestion].endTime = Date.now();
-        gameState.playerResponseTimes[playerId][progress.currentQuestion].timeSpent = 
-          gameState.playerResponseTimes[playerId][progress.currentQuestion].endTime - 
-          gameState.playerResponseTimes[playerId][progress.currentQuestion].startTime;
-      }
-      
-      // Tidak perlu feedback untuk timeout, langsung lanjut ke pertanyaan berikutnya
-      
-      progress.hasAnswered = true;
-      progress.currentQuestion++;
-      if (progress.currentQuestion < playerQuestions.length) {
-        sendQuestionToPlayer(playerId);
-      } else {
-        handlePlayerFinish(playerId);
-      }
-    }
-  }, timeLimit);
-}
+  });
 
   socket.on('playAgain', () => {
     const player = gameState.players[socket.id];
@@ -635,8 +610,12 @@ function sendQuestionToPlayer(playerId) {
     delete gameState.playerProgress[socket.id];
     delete gameState.playerQuestions[socket.id];
     readyPlayers.delete(socket.id);
-    clearTimeout(gameState.playerTimers[socket.id]);
-    delete gameState.playerTimers[socket.id];
+    
+    // Clear timer dengan lebih hati-hati
+    if (gameState.playerTimers[socket.id]) {
+      clearTimeout(gameState.playerTimers[socket.id]);
+      delete gameState.playerTimers[socket.id];
+    }
     
     // Update finish order
     const finishIndex = gameState.finishOrder.indexOf(socket.id);
@@ -665,12 +644,12 @@ function sendQuestionToPlayer(playerId) {
 app.get('/status', (req, res) => {
   const connectedSockets = Object.keys(gameState.connectedSockets).length;
   const connectedPlayers = Object.keys(gameState.players).length;
-  const readyPlayers = Array.from(readyPlayers).length;
+  const readyPlayersCount = Array.from(readyPlayers).length;
   
   res.json({
     totalConnected: connectedSockets,
     totalPlayers: connectedPlayers,
-    readyPlayers: readyPlayers,
+    readyPlayers: readyPlayersCount,
     isGameRunning: gameState.isRunning,
     players: Object.values(gameState.players).map(p => ({
       name: p.name,
@@ -714,5 +693,14 @@ app.get('/force-reset', (req, res) => {
   gameState.players = {};
   gameState.connectedSockets = {};
   gameState.finishOrder = [];
+  
+  // Clear semua timer
+  Object.keys(gameState.playerTimers).forEach(playerId => {
+    if (gameState.playerTimers[playerId]) {
+      clearTimeout(gameState.playerTimers[playerId]);
+    }
+  });
+  gameState.playerTimers = {};
+  
   res.send("Game direset paksa!");
 });

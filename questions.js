@@ -166,10 +166,10 @@ const questions = [
   },
   {
     "id": 24,
-    "text": "Struktur apakah yang ditunjukkan oleh panah biru?",
+    "text": "Struktur apakah yang ditunjukkan oleh huruf B?",
     "type": "image", 
     "image": "assets/gambar5.png",
-    "options": ["Hypothalamus", "Medulla", "Midbrain", "Pons"],
+    "options": ["Paru-Paru", "Jantung", "Colon", "Liver"],
     "answer": 3
   },
   {
@@ -269,8 +269,22 @@ const questions = [
     "id": 38,
     "text": "Area scanning pada CT abdomen mencakup?",
     "type": "text", 
-    "options": ["Apex paru hingga krista illiaka", "Diafragma hingga krista illiaka","Diafragma hingga symphisis pubis", "Diafragma hingga symphisis pubis"],
+    "options": ["Apex paru hingga krista illiaka", "Diafragma hingga krista illiaka","Diafragma hingga symphisis pubis", "Thorax hingga symphisis pubis"],
     "answer": 2
+  },
+  {
+    "id": 39,
+    "text": "Kontras dan densitas gambar pada pemeriksaan CT Scan dipengaruhi oleh pengaturan?",
+    "type": "text", 
+    "options": ["Slice thickness", "Window width dan window level","FOV", "Rotation time"],
+    "answer": 1
+  },
+    {
+    "id": 40,
+    "text": " Pada metode scanning head first, tubuh di scan dari arah?",
+    "type": "text", 
+    "options": ["Superior-inferior", "Inferior-superior","Anterior-posterior", "Superior-anterior"],
+    "answer": 0
   },
 ];
 
