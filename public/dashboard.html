@@ -269,9 +269,12 @@
             position: relative;
             overflow: hidden;
             min-width: 200px;
+            width: 100%; 
+            max-width: 250px; 
+            text-align: center; 
             text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-        }
-        
+        }  
+
         .btn::before {
             content: '';
             position: absolute;
@@ -509,6 +512,7 @@
         <div class="buttons">
             <button class="btn" id="startBtn">Start Games</button>
             <button class="btn" id="howToPlayBtn">How to Play</button>
+            <button class="btn" id="materiBtn">Materi</button>
         </div>
     </div>
     
@@ -530,6 +534,15 @@
             setTimeout(() => {
                 this.style.transform = '';
                 window.location.href = 'aturan.html';
+            }, 150);
+        });
+
+        document.getElementById('materiBtn').addEventListener('click', function() {
+            // Efek suara klik (opsional)
+            this.style.transform = 'scale(0.95)';
+            setTimeout(() => {
+                this.style.transform = '';
+                window.location.href = 'materi.html';
             }, 150);
         });
         
