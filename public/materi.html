@@ -594,34 +594,6 @@
             }
         });
 
-        // Touch/swipe navigation for mobile
-        let startX = 0;
-        let endX = 0;
-
-        document.addEventListener('touchstart', function(event) {
-            startX = event.touches[0].clientX;
-        });
-
-        document.addEventListener('touchend', function(event) {
-            endX = event.changedTouches[0].clientX;
-            handleSwipe();
-        });
-
-        function handleSwipe() {
-            const swipeThreshold = 50;
-            const difference = startX - endX;
-            
-            if (Math.abs(difference) > swipeThreshold) {
-                if (difference > 0) {
-                    // Swipe left - next page
-                    nextPage();
-                } else {
-                    // Swipe right - previous page
-                    previousPage();
-                }
-            }
-        }
-
         // Initialize
         updatePageIndicator();
         updateNavigationButtons();
