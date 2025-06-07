@@ -72,7 +72,7 @@ const gameState = {
 
 // Game Management
 let readyPlayers = new Set();
-const MAX_PLAYERS = 50;
+const MAX_PLAYERS = 70;
 const MIN_PLAYERS = 1;
 const COUNTDOWN_TIME = 10;
 
