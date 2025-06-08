@@ -33,7 +33,7 @@ const io = socketIo(server, {
 
 // Rate limiting per IP
 const connectionCounts = new Map();
-const MAX_CONNECTIONS_PER_IP = 5;
+const MAX_CONNECTIONS_PER_IP = 70;
 const CONNECTION_RESET_INTERVAL = 60000; // 1 menit
 
 // Reset connection counts setiap menit
