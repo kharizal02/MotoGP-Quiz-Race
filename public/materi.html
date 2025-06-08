@@ -274,6 +274,44 @@
             z-index: 100;
         }
 
+        /* Music Control Button */
+        .music-control {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #ff416c 0%, #ff4b2b 100%);
+            border: 3px solid #ffd166;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 
+                0 4px 0 #1e3c72,
+                0 8px 15px rgba(0, 0, 0, 0.3);
+            transition: all 0.15s ease;
+            z-index: 100;
+        }
+
+        .music-control:hover {
+            transform: translateY(2px);
+            box-shadow: 
+                0 2px 0 #1e3c72,
+                0 6px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .music-control:active {
+            transform: translateY(4px);
+            box-shadow: 
+                0 0 0 #1e3c72,
+                0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+
         /* Media Queries */
         @media only screen and (max-width: 768px) {
             .page-content {
@@ -329,6 +367,14 @@
 
             .image-item img {
                 height: 120px;
+            }
+
+            .music-control {
+                width: 50px;
+                height: 50px;
+                font-size: 1.3rem;
+                bottom: 15px;
+                right: 15px;
             }
         }
     </style>
@@ -536,9 +582,86 @@
         <button class="nav-btn" id="next-btn" onclick="nextPage()">Next</button>
     </div>
 
+    <button class="music-control" id="musicToggle">🎵</button>
+    
+    <audio id="backgroundMusic" loop preload="auto">
+        <source src="assets/sound.mp3" type="audio/mpeg">
+        Your browser does not support the audio element.
+    </audio>
+
     <script>
         let currentPageIndex = 1;
         const totalPages = 10;
+        const backgroundMusic = document.getElementById('backgroundMusic');
+        const musicToggle = document.getElementById('musicToggle');
+        let isMusicPlaying = false;
+
+        const musicState = localStorage.getItem('ctRacingMusicState');
+        if (musicState === 'playing') {
+            playMusic();
+        }
+
+        // Music control functions
+        function playMusic() {
+            backgroundMusic.play().then(() => {
+                isMusicPlaying = true;
+                musicToggle.innerHTML = '🔊';
+                localStorage.setItem('ctRacingMusicState', 'playing');
+            }).catch(e => {
+                console.log('Music autoplay blocked:', e);
+            });
+        }
+
+        function pauseMusic() {
+            backgroundMusic.pause();
+            isMusicPlaying = false;
+            musicToggle.innerHTML = '🔇';
+            localStorage.setItem('ctRacingMusicState', 'paused');
+        }
+
+        function toggleMusic() {
+            if (isMusicPlaying) {
+                pauseMusic();
+            } else {
+                playMusic();
+            }
+        }
+
+        // Music toggle button event
+        musicToggle.addEventListener('click', toggleMusic);
+
+        // Start music on first user interaction
+        function enableMusicOnInteraction() {
+            if (!isMusicPlaying && musicState !== 'paused') {
+                playMusic();
+            }
+            document.removeEventListener('click', enableMusicOnInteraction);
+            document.removeEventListener('keydown', enableMusicOnInteraction);
+        }
+
+        document.addEventListener('click', enableMusicOnInteraction);
+        document.addEventListener('keydown', enableMusicOnInteraction);
+
+        // Resume music from stored time when page loads
+        backgroundMusic.addEventListener('loadeddata', function() {
+            const storedTime = localStorage.getItem('ctRacingMusicTime');
+            if (storedTime && !isNaN(storedTime)) {
+                backgroundMusic.currentTime = parseFloat(storedTime);
+            }
+        });
+
+        // Handle page visibility change
+        document.addEventListener('visibilitychange', function() {
+            if (document.hidden) {
+                if (isMusicPlaying) {
+                    backgroundMusic.pause();
+                }
+            } else {
+                if (isMusicPlaying) {
+                    backgroundMusic.play();
+                }
+            }
+        });
 
         function updatePageIndicator() {
             document.getElementById('current-page').textContent = currentPageIndex;

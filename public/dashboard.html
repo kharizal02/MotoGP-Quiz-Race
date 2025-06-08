@@ -307,6 +307,43 @@
                 inset 0 2px 0 rgba(255, 255, 255, 0.1);
         }
 
+        /* Music Control Button */
+        .music-control {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #ff416c 0%, #ff4b2b 100%);
+            border: 3px solid #ffd166;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 
+                0 4px 0 #1e3c72,
+                0 8px 15px rgba(0, 0, 0, 0.3);
+            transition: all 0.15s ease;
+            z-index: 100;
+        }
+
+        .music-control:hover {
+            transform: translateY(2px);
+            box-shadow: 
+                0 2px 0 #1e3c72,
+                0 6px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .music-control:active {
+            transform: translateY(4px);
+            box-shadow: 
+                0 0 0 #1e3c72,
+                0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
         /* Efek cahaya bergerak - updated colors */
         .moving-lights {
             position: fixed;
@@ -409,6 +446,14 @@
                 width: 50px;
                 height: 38px;
             }
+
+            .music-control {
+                width: 50px;
+                height: 50px;
+                font-size: 1.3rem;
+                bottom: 15px;
+                right: 15px;
+            }
         }
         
         @media only screen and (max-width: 576px) {
@@ -488,6 +533,12 @@
                 width: 35px;
                 height: 26px;
             }
+
+            .music-control {
+                width: 45px;
+                height: 45px;
+                font-size: 1.2rem;
+            }
         }
     </style>
 </head>
@@ -518,32 +569,111 @@
     
     <div class="moving-lights"></div>
     
+    <!-- Music Control Button -->
+    <button class="music-control" id="musicToggle">🎵</button>
+    
+    <!-- Background Music -->
+    <audio id="backgroundMusic" loop preload="auto">
+        <source src="assets/sound.mp3" type="audio/mpeg">
+        Your browser does not support the audio element.
+    </audio>
+    
     <script>
+        // Background Music Management
+        const backgroundMusic = document.getElementById('backgroundMusic');
+        const musicToggle = document.getElementById('musicToggle');
+        let isMusicPlaying = false;
+
+        // Load music state from localStorage if available
+        const musicState = localStorage.getItem('ctRacingMusicState');
+        if (musicState === 'playing') {
+            playMusic();
+        }
+
+        // Music control functions
+        function playMusic() {
+            backgroundMusic.play().then(() => {
+                isMusicPlaying = true;
+                musicToggle.innerHTML = '🔊';
+                localStorage.setItem('ctRacingMusicState', 'playing');
+            }).catch(e => {
+                console.log('Music autoplay blocked:', e);
+                // Music will be played when user interacts
+            });
+        }
+
+        function pauseMusic() {
+            backgroundMusic.pause();
+            isMusicPlaying = false;
+            musicToggle.innerHTML = '🔇';
+            localStorage.setItem('ctRacingMusicState', 'paused');
+        }
+
+        function toggleMusic() {
+            if (isMusicPlaying) {
+                pauseMusic();
+            } else {
+                playMusic();
+            }
+        }
+
+        // Music toggle button event
+        musicToggle.addEventListener('click', toggleMusic);
+
+        // Start music on first user interaction (required by browsers)
+        function enableMusicOnInteraction() {
+            if (!isMusicPlaying && musicState !== 'paused') {
+                playMusic();
+            }
+            // Remove listeners after first interaction
+            document.removeEventListener('click', enableMusicOnInteraction);
+            document.removeEventListener('keydown', enableMusicOnInteraction);
+        }
+
+        document.addEventListener('click', enableMusicOnInteraction);
+        document.addEventListener('keydown', enableMusicOnInteraction);
+
+        // Navigation with music continuation
+        function navigateWithMusic(url) {
+            // Store current music time and state
+            localStorage.setItem('ctRacingMusicTime', backgroundMusic.currentTime);
+            localStorage.setItem('ctRacingMusicState', isMusicPlaying ? 'playing' : 'paused');
+            
+            // Navigate to new page
+            window.location.href = url;
+        }
+
+        // Button event listeners
         document.getElementById('startBtn').addEventListener('click', function() {
-            // Efek suara klik (opsional)
             this.style.transform = 'scale(0.95)';
             setTimeout(() => {
                 this.style.transform = '';
-                window.location.href = 'game.html';
+                navigateWithMusic('game.html');
             }, 150);
         });
         
         document.getElementById('howToPlayBtn').addEventListener('click', function() {
-            // Efek suara klik (opsional)
             this.style.transform = 'scale(0.95)';
             setTimeout(() => {
                 this.style.transform = '';
-                window.location.href = 'aturan.html';
+                navigateWithMusic('aturan.html');
             }, 150);
         });
 
         document.getElementById('materiBtn').addEventListener('click', function() {
-            // Efek suara klik (opsional)
             this.style.transform = 'scale(0.95)';
             setTimeout(() => {
                 this.style.transform = '';
-                window.location.href = 'materi.html';
+                navigateWithMusic('materi.html');
             }, 150);
+        });
+
+        // Resume music from stored time when page loads
+        backgroundMusic.addEventListener('loadeddata', function() {
+            const storedTime = localStorage.getItem('ctRacingMusicTime');
+            if (storedTime && !isNaN(storedTime)) {
+                backgroundMusic.currentTime = parseFloat(storedTime);
+            }
         });
         
         // Efek parallax sederhana untuk awan
@@ -555,6 +685,19 @@
                 const speed = 0.5 + (index * 0.1);
                 cloud.style.transform += ` translateY(${scrolled * speed}px)`;
             });
+        });
+
+        // Handle page visibility change (pause music when tab is not active)
+        document.addEventListener('visibilitychange', function() {
+            if (document.hidden) {
+                if (isMusicPlaying) {
+                    backgroundMusic.pause();
+                }
+            } else {
+                if (isMusicPlaying) {
+                    backgroundMusic.play();
+                }
+            }
         });
     </script>
 </body>
